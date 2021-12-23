@@ -177,7 +177,7 @@ class BaseSetAssoc : public BaseTags
                          std::vector<CacheBlk*>& evict_blks) override
     {
         // Get possible entries to be victimized
-        // yongjun : set blocks
+        // yongjun : set blocksd
         int local_cnt_value = 0;
         int thres = 8;
         const std::vector<ReplaceableEntry*> entries =
