@@ -160,6 +160,33 @@ class BaseSetAssoc : public BaseTags
     void updataLocalCounterToTags(Addr addr, int is_hit){
         indexingPolicy->updateLocalCounter(addr, is_hit);
     }
+    // yongjun : writeback PROI
+    /*
+    void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks)
+    {
+        int local_cnt_value = 0;
+        int thres = 16;
+        const std::vector<ReplaceableEntry*> entries =
+                indexingPolicy->getPossibleEntries(addr);
+        if((params_name == "system.l2.tags")) {
+            int setIdx = indexingPolicy->getSetIdx(addr);
+            local_cnt_value = indexingPolicy->getLocalCounter(addr);
+            if ((local_cnt_value <= thres)) {
+                CacheBlk *victim_dead = static_cast<CacheBlk *>(replacementPolicy->getVictim(
+                        entries, 1));
+                // IF NULL DON'T INSERT
+                if (victim_dead != NULL) {
+                    stats.deadblock++;
+                    evict_blks.push_back(victim_dead);
+                    // get size?
+                    std::memset(victim_dead->data, 0, 64);
+                }
+            }
+        }
+    }
+    //end
+     */
+
     /**
      * Find replacement victim based on address. The list of evicted blocks
      * only contains the victim.
@@ -208,9 +235,9 @@ class BaseSetAssoc : public BaseTags
                 // IF NULL DON'T INSERT
                 if (victim_dead != NULL) {
                     stats.deadblock++;
-                    evict_blks.push_back(victim_dead);
+                    //evict_blks.push_back(victim_dead);
                     // get size?
-                    std::memset(victim_dead->data, 0, 64);
+                    //std::memset(victim_dead->data, 0, 64);
                     //std::memcpy(victim_dead->data, all_zero_p, 64);
                     //std::memcpy(p, getConstPtr<uint8_t>(), getSize());
                     //for(int i = 0 ; i< 64;i++){

@@ -1533,8 +1533,11 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         // and leave it as is for a clean writeback
         if (pkt->cmd == MemCmd::WritebackDirty) {
             // TODO: the coherent cache can assert that the dirty bit is set
+            // yongjun : WritebackDirty-> blk DirtyBits로 set
             blk->setCoherenceBits(CacheBlk::DirtyBit);
-            // yongho, WritebackDirty 상태라면 blk의 상태를 DirtyBits로 설정
+            //yongjun : IF dirty writeback, Deadblock prediction
+
+
         }
         // if the packet does not have sharers, it is passing
         // writable, and we got the writeback in Modified or Exclusive
@@ -1548,8 +1551,19 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         // Adding Parts Start
         
         if (params_name == "system.l2"){
+            /*
             // yongjun : PROI
+            // Find replacement victim
+            std::vector<CacheBlk*> dead_evict_blks;
+            CacheBlk *victim = tags->writeHitL2_PROI(addr, dead_evict_blks);
+
+            // Try to evict blocks; if it fails, give up on allocation
+            if (!handleEvictions(evict_blks, writebacks)) {
+                return nullptr;
+            }
+            //end
             updateBlockDataForL2(blk, pkt, has_old_data);
+            */
         }else{
             updateBlockData(blk, pkt, has_old_data);
         }
