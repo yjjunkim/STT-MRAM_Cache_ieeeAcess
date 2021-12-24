@@ -161,7 +161,7 @@ class BaseSetAssoc : public BaseTags
         indexingPolicy->updateLocalCounter(addr, is_hit);
     }
     // yongjun : writeback PROI
-    /*
+
     void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks)
     {
         int local_cnt_value = 0;
@@ -185,7 +185,7 @@ class BaseSetAssoc : public BaseTags
         }
     }
     //end
-     */
+
 
     /**
      * Find replacement victim based on address. The list of evicted blocks

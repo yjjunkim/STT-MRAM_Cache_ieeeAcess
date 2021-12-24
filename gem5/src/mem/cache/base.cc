@@ -1551,7 +1551,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         // Adding Parts Start
         
         if (params_name == "system.l2"){
-            /*
+
             // yongjun : PROI
             // Find replacement victim
             std::vector<CacheBlk*> dead_evict_blks;
@@ -1563,7 +1563,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
             }
             //end
             updateBlockDataForL2(blk, pkt, has_old_data);
-            */
+
         }else{
             updateBlockData(blk, pkt, has_old_data);
         }
