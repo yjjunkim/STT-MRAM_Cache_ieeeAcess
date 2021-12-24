@@ -1100,6 +1100,8 @@ BaseCache::handleEvictions(std::vector<CacheBlk*> &evict_blks,
     PacketList &writebacks)
 {
     bool replacement = false;
+    int is_l2 = 0;
+    if(params_name == "system.l2") is_l2 = 1;
     for (const auto& blk : evict_blks) {
         if (blk->isValid()) {
             replacement = true;
@@ -1546,6 +1548,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         // Adding Parts Start
         
         if (params_name == "system.l2"){
+            // yongjun : PROI
             updateBlockDataForL2(blk, pkt, has_old_data);
         }else{
             updateBlockData(blk, pkt, has_old_data);

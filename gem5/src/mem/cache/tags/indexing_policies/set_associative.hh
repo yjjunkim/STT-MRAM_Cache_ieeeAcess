@@ -120,6 +120,7 @@ class SetAssociative : public BaseIndexingPolicy
     //yongjun
     int getLocalCounter(const Addr addr) const;
     void updateLocalCounter(const Addr addr, int is_hit);
+    int getSetIdx(const Addr addr) const;
     //end
     /**
      * Regenerate an entry's address from its tag and assigned set and way.

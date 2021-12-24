@@ -86,8 +86,10 @@ class BaseTags : public ClockedObject
     System *system;
 
     /** Indexing policy */
-    //yongjun : to public?
+
     BaseIndexingPolicy *indexingPolicy;
+    //yongjun : old data list
+    uint8_t oldDataDeadblock[8192] ={0,};
 
     /**
      * The number of tags that need to be touched to meet the warmup
@@ -264,7 +266,7 @@ class BaseTags : public ClockedObject
         stats.occupancies[blk->getSrcRequestorId()]--;
         stats.totalRefs += blk->getRefCount();
         stats.sampledRefs++;
-
+        //yongjun : invalidate
         blk->invalidate();
     }
 

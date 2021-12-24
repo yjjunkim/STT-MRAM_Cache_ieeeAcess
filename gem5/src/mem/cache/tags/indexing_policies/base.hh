@@ -152,6 +152,7 @@ class BaseIndexingPolicy : public SimObject
     //yongjun
     virtual int getLocalCounter(const Addr addr) const = 0;
     virtual void updateLocalCounter(const Addr addr, int is_hit) = 0;
+    virtual int getSetIdx(const Addr addr) const = 0;
     //end
     /**
      * Regenerate an entry's address from its tag and assigned indexing bits.

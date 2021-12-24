@@ -63,8 +63,7 @@ SetAssociative::extractSet(const Addr addr) const
 }
 
 Addr
-SetAssociative::regenerateAddr(const Addr tag, const ReplaceableEntry* entry)
-                                                                        const
+SetAssociative::regenerateAddr(const Addr tag, const ReplaceableEntry* entry) const
 {
     return (tag << tagShift) | (entry->getSet() << setShift);
 }
@@ -92,6 +91,11 @@ SetAssociative::updateLocalCounter(const Addr addr, int is_hit)
         if(local_counter[extractSet(addr)] > 0)
             local_counter[extractSet(addr)]--;
     }
+}
+int
+SetAssociative::getSetIdx(const Addr addr) const
+{
+    return extractSet(addr);
 }
 // end
 
