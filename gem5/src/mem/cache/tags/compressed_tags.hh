@@ -111,6 +111,9 @@ class CompressedTags : public SectorTags
     void updataLocalCounterToTags(Addr addr, int is_hit){
         return;
     }
+    void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks){
+        return;
+    }
     /**
      * Visit each sub-block in the tags and apply a visitor.
      *

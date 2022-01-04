@@ -181,6 +181,9 @@ class SectorTags : public BaseTags
     void updataLocalCounterToTags(Addr addr, int is_hit){
         return;
     }
+    void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks){
+        return;
+    }
 
     /**
      * Calculate a block's offset in a sector from the address.

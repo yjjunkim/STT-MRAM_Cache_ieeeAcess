@@ -290,6 +290,10 @@ class BaseTags : public ClockedObject
     virtual CacheBlk* findVictim(Addr addr, const bool is_secure,
                                  const std::size_t size,
                                  std::vector<CacheBlk*>& evict_blks) = 0;
+    //yonjun : proi
+    virtual void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks) =0;
+    //end
+
 
     /**
      * Access block and update replacement data. May not succeed, in which case

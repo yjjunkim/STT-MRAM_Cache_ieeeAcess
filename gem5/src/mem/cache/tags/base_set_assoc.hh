@@ -225,7 +225,7 @@ class BaseSetAssoc : public BaseTags
         //CacheBlk* victim_deadblock = static_cast<CacheBlk*>(std::get<1>(tmp));
         //yongjun : 2개 evict 필요, push.back ?
 
-
+        //uint8_t tmp = 0;
         if((params_name == "system.l2.tags")){
             int setIdx = indexingPolicy->getSetIdx(addr);
             local_cnt_value = indexingPolicy->getLocalCounter(addr);
@@ -233,9 +233,22 @@ class BaseSetAssoc : public BaseTags
                 CacheBlk *victim_dead = static_cast<CacheBlk *>(replacementPolicy->getVictim(
                         entries, 1));
                 // IF NULL DON'T INSERT
+                /*
                 if (victim_dead != NULL) {
-                    stats.deadblock++;
-                    //evict_blks.push_back(victim_dead);
+                    //stats.deadblock++;
+                    evict_blks.push_back(victim_dead);
+                    //uint8_t* data = victim_dead->data;
+                    //std::cout << "data = " <<*data << '\n';
+                    //if(*data == 0){
+                    //    std::cout<< "null" << '\n';
+                    //}
+                    //if(*data !=0){
+                    //    std::cout << data << '\n';
+                    //}
+                    //for(int i =0; i < 64; i++){
+                    //data[i] = tmp;
+                    //}
+                    //std::cout<< data[0] << '\n';
                     // get size?
                     //std::memset(victim_dead->data, 0, 64);
                     //std::memcpy(victim_dead->data, all_zero_p, 64);
@@ -244,7 +257,8 @@ class BaseSetAssoc : public BaseTags
                     //    victim_dead->data[i] = 0;
                     //}
                     //std::cout<<"no preset !!"<< '\n';
-                }
+                }*/
+
             }
         }
 

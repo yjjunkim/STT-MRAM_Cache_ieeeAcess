@@ -1480,10 +1480,10 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
     // the cache without having a writeable copy (or any copy at all).
     if (pkt->isWriteback()) {
         //Adding Parts Start
-        if (params_name == "system.l2"){
-            tempForWrite++;
+        //if (params_name == "system.l2"){
+        //    tempForWrite++;
             //std::cout << "L2, Write : " << tempForWrite << std::endl;
-        }
+        //}
         //Adding Parts End
         assert(blkSize == pkt->getSize());
 
@@ -1554,13 +1554,14 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
 
             // yongjun : PROI
             // Find replacement victim
-            std::vector<CacheBlk*> dead_evict_blks;
-            CacheBlk *victim = tags->writeHitL2_PROI(addr, dead_evict_blks);
+            //std::vector<CacheBlk*> dead_evict_blks;
+            //tags->writeHitL2_PROI(pkt->getAddr(), dead_evict_blks);
 
             // Try to evict blocks; if it fails, give up on allocation
-            if (!handleEvictions(evict_blks, writebacks)) {
-                return nullptr;
-            }
+            //if (!handleEvictions(dead_evict_blks, writebacks)) {
+            //    return nullptr;
+            //}
+            //handleEvictions(dead_evict_blks, writebacks);
             //end
             updateBlockDataForL2(blk, pkt, has_old_data);
 
@@ -1671,10 +1672,10 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         // Calculate access latency based on the need to access the data array
         if (pkt->isRead()) {
             lat = calculateAccessLatency(blk, pkt->headerDelay, tag_latency);
-            if(params_name == "system.l2"){
-                tempForRead++;
+            //if(params_name == "system.l2"){
+            //    tempForRead++;
                 //std::cout << "L2, Read : " << tempForRead << std::endl;
-            }
+            //}
 
             // When a block is compressed, it must first be decompressed
             // before being read. This adds to the access latency.
@@ -1869,7 +1870,16 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
     if (!handleEvictions(evict_blks, writebacks)) {
         return nullptr;
     }
-
+    /*
+    if(evict_blks.size() == 2){
+        //std::cout<<"dead block"<<'\n';
+        uint8_t tmp = 0;
+        uint8_t* data = evict_blks[1]->data;
+        for(int i =0; i < 64; i++){
+            data[i] = tmp;
+        }
+    }
+     */
     // Insert new block at victimized entry
     tags->insertBlock(pkt, victim);
 
