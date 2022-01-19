@@ -1073,6 +1073,13 @@ class BaseCache : public ClockedObject
         statistics::Scalar oneToOne;
         statistics::Scalar zeroToZero;
 
+        statistics::Scalar zeroToZero_preset;
+        statistics::Scalar zeroToOne_preset;
+        statistics::Scalar narrowWidth_preset;
+        statistics::Scalar NonNarrowWidth_preset;
+        statistics::Scalar DeadblockCount;
+
+
         //end
 
         /** Number of hits for demand accesses. */

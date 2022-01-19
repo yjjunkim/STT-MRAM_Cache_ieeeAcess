@@ -98,18 +98,20 @@ LRU::getVictim(const ReplacementCandidates& candidates, int flag) const {
 
     int is_change = 0;
     ReplaceableEntry *victim_dead = NULL;
-    ReplaceableEntry *victim_prev;
+    ReplaceableEntry *victim_prev = NULL;
     // Visit all candidates to find victim
     ReplaceableEntry *victim = candidates[0];
     for (const auto &candidate: candidates) {
         is_change = 0;
+        //CacheBlk* valid_test = candidate;
+        //bool valid_bit = valid_test->isValid();
         // Update victim entry if necessary
         //std::cout<< params_name << "\n";
         //if (params_name == "system.l2.replacement_policy") i++;
         //std::cout << "cadidate lastTouch : "
         //          << std::static_pointer_cast<LRUReplData>(candidate->replacementData)->lastTouchTick << "\n";
         //yongjun : if same touch change victim
-        if (std::static_pointer_cast<LRUReplData>(candidate->replacementData)->lastTouchTick <=
+        if (std::static_pointer_cast<LRUReplData>(candidate->replacementData)->lastTouchTick <
             std::static_pointer_cast<LRUReplData>(victim->replacementData)->lastTouchTick) {
             // yongjun : set flag and save prev_victim
             is_change = 1;

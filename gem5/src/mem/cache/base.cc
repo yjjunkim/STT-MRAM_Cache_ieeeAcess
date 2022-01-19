@@ -1406,8 +1406,8 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
             blk ? "hit " + blk->print() : "miss");
     //yongjun : pkt addr -> check hit or miss
     //std::cout << " cache:base.cc addr = " << pkt->getAddr() << '\n';
+    int is_hit = 0;
     if (params_name == "system.l2") {
-        int is_hit = 0;
         if (blk) is_hit = 1;
         tags->updataLocalCounterToTags(pkt->getAddr(), is_hit);
         //tags->updataLocalCounterToTags(pkt->getAddr(), 1);
@@ -1475,7 +1475,6 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
     if (pkt->isWrite()) {
         lat = calculateTagOnlyLatency(pkt->headerDelay, tag_latency);    
     }
-
     // Writeback handling is special case.  We can write the block into
     // the cache without having a writeable copy (or any copy at all).
     if (pkt->isWriteback()) {
@@ -1553,15 +1552,63 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         if (params_name == "system.l2"){
 
             // yongjun : PROI
-            // Find replacement victim
-            //std::vector<CacheBlk*> dead_evict_blks;
-            //tags->writeHitL2_PROI(pkt->getAddr(), dead_evict_blks);
+            // Write hit
+            if((pkt->isWriteback()) && (is_hit) && (params_name == "system.l2")){
+                std::vector<CacheBlk*> dead_evict_blks;
+                const Addr addr_test = pkt->getAddr();
+                tags->writeHitL2_PROI(addr_test, dead_evict_blks);
 
-            // Try to evict blocks; if it fails, give up on allocation
-            //if (!handleEvictions(dead_evict_blks, writebacks)) {
-            //    return nullptr;
-            //}
-            //handleEvictions(dead_evict_blks, writebacks);
+                if(dead_evict_blks.size() == 1) {
+                    if((dead_evict_blks[0]==blk)==false) {
+                        stats.DeadblockCount++;
+                        handleEvictions(dead_evict_blks, writebacks);
+                        int narrow_set = 0;
+                        int flag[4];
+                        for(int k = 0; k < 4; k++){
+                            flag[k] = 0;
+                        }
+                        uint8_t tmp = 0;
+                        //uint8_t tmp = 255;
+                        uint8_t *data = dead_evict_blks[0]->data;
+                        for (int i = 0; i < 64; i++) {
+                            std::string s;
+                            s = std::bitset<8>(data[i] & 0xff).to_string();
+                            for (int j = 0; j < 8; j++) {
+                                if (s[j] == '0') stats.zeroToZero_preset++;
+                                else if (s[j] == '1') stats.zeroToOne_preset++;
+                            }
+                            data[i] = tmp;
+                            if(narrow_set >= 4){
+                                //for (int j = 0; j < 8; j++) {
+                                //    if (s[j] == '0') stats.zeroToZero_preset++;
+                                //    else if (s[j] == '1') stats.zeroToOne_preset++;
+                                //}
+                                //data[i] = tmp;
+                                if(count(s.begin(), s.end(), '0') == 8){
+                                    flag[narrow_set-4] = 1;
+                                }
+                                else{
+                                    flag[narrow_set-4] = 0;
+                                }
+                            }
+                            if(narrow_set == 7 && flag[0] && flag[1] && flag[2] && flag[3]){
+                                stats.narrowWidth_preset += 1;
+                            }
+                            else if(narrow_set == 7){
+                                stats.NonNarrowWidth_preset += 1;
+                            }
+                            if(narrow_set != 7) narrow_set += 1;
+                            else {
+                                narrow_set = 0;
+                                for(int k = 0; k < 4; k++){
+                                    flag[k] = 0;
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
             //end
             updateBlockDataForL2(blk, pkt, has_old_data);
 
@@ -1870,16 +1917,64 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
     if (!handleEvictions(evict_blks, writebacks)) {
         return nullptr;
     }
-    /*
-    if(evict_blks.size() == 2){
-        //std::cout<<"dead block"<<'\n';
-        uint8_t tmp = 0;
-        uint8_t* data = evict_blks[1]->data;
-        for(int i =0; i < 64; i++){
-            data[i] = tmp;
+
+    //yongjun : preset
+
+    if(params_name == "system.l2") {
+        int narrow_set = 0;
+        int flag[4];
+        for(int k = 0; k < 4; k++){
+            flag[k] = 0;
+        }
+        if (evict_blks.size() == 2) {
+            //std::cout<<"dead block"<<'\n';
+            stats.DeadblockCount++;
+            uint8_t tmp = 0;
+            uint8_t *data = evict_blks[1]->data;
+            for (int i = 0; i < 64; i++) {
+                std::string s;
+                s = std::bitset<8>(data[i] & 0xff).to_string();
+                for (int j = 0; j < 8; j++) {
+                    if (s[j] == '0') stats.zeroToZero_preset++;
+                    else if (s[j] == '1') stats.zeroToOne_preset++;
+                }
+                data[i] = tmp;
+                if(narrow_set >= 4){
+                    /*for (int j = 0; j < 8; j++) {
+                        if (s[j] == '0') stats.zeroToZero_preset++;
+                        else if (s[j] == '1') stats.zeroToOne_preset++;
+                    }
+                    data[i] = tmp;*/
+                    if(count(s.begin(), s.end(), '0') == 8){
+                        flag[narrow_set-4] = 1;
+                    }
+                    else{
+                        flag[narrow_set-4] = 0;
+                    }
+                }
+                if(narrow_set == 7 && flag[0] && flag[1] && flag[2] && flag[3]){
+                    stats.narrowWidth_preset += 1;
+                }
+                else if(narrow_set == 7){
+                    stats.NonNarrowWidth_preset += 1;
+                }
+                if(narrow_set != 7) narrow_set += 1;
+                else {
+                    narrow_set = 0;
+                    for(int k = 0; k < 4; k++){
+                        flag[k] = 0;
+                    }
+                }
+
+            }
         }
     }
-     */
+
+
+
+    //end
+
+
     // Insert new block at victimized entry
     tags->insertBlock(pkt, victim);
 
@@ -2438,6 +2533,18 @@ BaseCache::CacheStats::CacheStats(BaseCache &c)
              "number of one to one value in Cache block"),
     ADD_STAT(zeroToZero, statistics::units::Count::get(),
              "number of zero to zero in Cache block"),
+
+    ADD_STAT(zeroToZero_preset, statistics::units::Count::get(),
+            "number of zero to zero (preset) in Cache block"),
+    ADD_STAT(zeroToOne_preset, statistics::units::Count::get(),
+            "number of zero to one (preset) in Cache block"),
+    ADD_STAT(narrowWidth_preset, statistics::units::Count::get(),
+           "number of narrow width value in Cache block"),
+    ADD_STAT(NonNarrowWidth_preset, statistics::units::Count::get(),
+           "number of Non narrow width value in Cache block"),
+    ADD_STAT(DeadblockCount, statistics::units::Count::get(),
+           "number of Deadblock in Cache"),
+
     // end
 
     ADD_STAT(demandHits, statistics::units::Count::get(),
