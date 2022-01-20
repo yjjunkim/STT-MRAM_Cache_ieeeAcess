@@ -51,6 +51,7 @@
 #include <string>
 #include <iostream>
 #include <bitset>
+#include <cmath>
 
 #include "base/addr_range.hh"
 #include "base/compiler.hh"
@@ -118,7 +119,37 @@ class BaseCache : public ClockedObject
     /**
      * Reasons for caches to be blocked.
      */
-     
+    //yongho
+    //Adding Part Start
+    Cycles *bankAvailableCycles;
+
+    inline int calcBankAddr(Addr addr){
+        uint64_t bankAddr = 0;
+
+        if (bankNumber == 1)
+            bankAddr = 0;
+        else {
+            uint64_t mask = bankNumber - 1;
+            bankAddr = ((addr >> int(log2(blkSize)) ) & mask);
+        }
+        return bankAddr;
+    }
+    Cycles checkBankCycles(uint64_t bankAddr){
+        Cycles tempCycles = Cycles(0);
+
+        if(bankAvailableCycles[bankAddr] >= curCycle()){
+            tempCycles += bankAvailableCycles[bankAddr] - curCycle();
+        }
+        return tempCycles;
+    }
+    void updateBankCycles(uint64_t bankAddr, Cycles latency){
+        if(bankAvailableCycles[bankAddr] <= curCycle()){
+            bankAvailableCycles[bankAddr] = curCycle() + latency;
+        }else if(bankAvailableCycles[bankAddr] > curCycle()){
+            bankAvailableCycles[bankAddr] += latency;
+        }
+    }
+    //Adding Part End
     enum BlockedCause
     {
         Blocked_NoMSHRs = MSHRQueue_MSHRs,
@@ -348,6 +379,11 @@ class BaseCache : public ClockedObject
 
     CpuSidePort cpuSidePort;
     MemSidePort memSidePort;
+    //yongho
+    //Adding Part Start
+    std::string params_name;
+    int bankNumber;
+    //Adding Part End
 
   protected:
 
@@ -926,6 +962,9 @@ class BaseCache : public ClockedObject
 
     /** The latency to fill a cache block */
     const Cycles fillLatency;
+
+    //yongho
+    const Cycles writeLatency;
 
     /**
      * The latency of sending reponse to its upper level cache/core on

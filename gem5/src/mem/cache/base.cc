@@ -95,6 +95,11 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
     : ClockedObject(p),
       cpuSidePort (p.name + ".cpu_side_port", this, "CpuSidePort"),
       memSidePort(p.name + ".mem_side_port", this, "MemSidePort"),
+      //yongho
+      //Adding Part Start
+      params_name(p.name),
+      bankNumber(p.bank_number),
+       //Adding Part End
       mshrQueue("MSHRs", p.mshrs, 0, p.demand_mshr_reserve, p.name),
       writeBuffer("write buffer", p.write_buffers, p.mshrs, p.name),
       tags(p.tags),
@@ -111,7 +116,8 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
       dataLatency(p.data_latency),
       forwardLatency(p.tag_latency),
       //fillLatency(p.data_latency),
-      fillLatency(p.fill_latency),
+      fillLatency(p.write_latency),
+      writeLatency(p.write_latency),
       responseLatency(p.response_latency),
       sequentialAccess(p.sequential_access),
       numTarget(p.tgts_per_mshr),
@@ -409,6 +415,17 @@ BaseCache::recvTimingReq(PacketPtr pkt)
 
         handleTimingReqHit(pkt, blk, request_time);
     } else {
+        //yongho
+        if(params_name == "system.l2"){
+            Cycles bankBlockLat = Cycles(0);
+            uint64_t bankAddr = calcBankAddr(pkt->getAddr());
+            //For Update BankAvailableCycles in Read Miss..
+            updateBankCycles(bankAddr, forwardLatency);
+            bankBlockLat += checkBankCycles(bankAddr);
+            //For Check BankAvailableCycles in Read Miss
+            forward_time = clockEdge(bankBlockLat) + pkt->headerDelay;
+        }
+        //end
         handleTimingReqMiss(pkt, blk, forward_time, request_time);
 
         ppMiss->notify(pkt);
@@ -1371,10 +1388,17 @@ BaseCache::calculateAccessLatency(const CacheBlk* blk, const uint32_t delay,
         // access latency on top of when the block is ready to be accessed.
         const Tick tick = curTick() + delay;
         const Tick when_ready = blk->getWhenReady();
-        if (when_ready > tick &&
+        /*if (when_ready > tick &&
             ticksToCycles(when_ready - tick) > lat) {
             lat += ticksToCycles(when_ready - tick);
+        }*/
+        //yongho
+        if (when_ready > tick &&
+            ticksToCycles(when_ready - tick) > lat &&
+            (params_name != "system.l2")) {
+            lat += ticksToCycles(when_ready - tick);
         }
+        //end
     } else {
         // In case of a miss, we neglect the data access in a parallel
         // configuration (i.e., the data access will be stopped as soon as
@@ -1632,6 +1656,13 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         blk->setWhenReady(clockEdge(fillLatency) + pkt->headerDelay +
             std::max(cyclesToTicks(tag_latency), (uint64_t)pkt->payloadDelay));
 
+        //yongho
+        if(params_name == "system.l2"){
+            uint64_t bankAddr = calcBankAddr(pkt->getAddr());
+            //For Update BankAvailableCycles in Fill, Writeback.. (Default)
+            updateBankCycles(bankAddr, writeLatency);
+        }
+        //end
         return true;
     } else if (pkt->cmd == MemCmd::CleanEvict) {
         // A CleanEvict does not need to access the data array
@@ -1707,6 +1738,13 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         // soon as the fill is done
         blk->setWhenReady(clockEdge(fillLatency) + pkt->headerDelay +
             std::max(cyclesToTicks(tag_latency), (uint64_t)pkt->payloadDelay));
+        //yongho
+        if(params_name == "system.l2"){
+            uint64_t bankAddr = calcBankAddr(pkt->getAddr());
+            //For Update BankAvailableCycles in Fill, Writeback.. (Default)
+            updateBankCycles(bankAddr, writeLatency);
+        }
+        //end
 
         // If this a write-through packet it will be sent to cache below
         return !pkt->writeThrough();
@@ -1719,13 +1757,19 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         // Calculate access latency based on the need to access the data array
         if (pkt->isRead()) {
             lat = calculateAccessLatency(blk, pkt->headerDelay, tag_latency);
-            //if(params_name == "system.l2"){
-            //    tempForRead++;
-                //std::cout << "L2, Read : " << tempForRead << std::endl;
-            //}
+            //yongho
+            if(params_name == "system.l2"){
+                uint64_t bankAddr = calcBankAddr(pkt->getAddr());
+                //For Check BankAvailableCycles in Read Hit
+                lat += checkBankCycles(bankAddr);
+                //For Update BankAvailableCycles in Read Hit..
+                updateBankCycles(bankAddr, dataLatency);
+            }
+            //end
 
             // When a block is compressed, it must first be decompressed
             // before being read. This adds to the access latency.
+
             if (compressor) {
                 lat += compressor->getDecompressionLatency(blk);
             }
@@ -1867,6 +1911,18 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
     //yongujun : cache fill하는 부분, latency 추가
     blk->setWhenReady(clockEdge(fillLatency) + pkt->headerDelay +
                       pkt->payloadDelay);
+
+    //yongho
+    //Adding part start
+    if(params_name == "system.l2"){
+        uint64_t bankAddr = calcBankAddr(pkt->getAddr());
+        //For Update BankAvailableCycles in Fill, Writeback.. (Default)
+        updateBankCycles(bankAddr, writeLatency);
+        //yongjun : PROI fast write part
+        //dataLatency = 20
+        //writeLatency = 50
+    }
+    //Adding part end
 
     return blk;
 }

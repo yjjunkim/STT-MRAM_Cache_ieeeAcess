@@ -772,9 +772,29 @@ Cache::serviceMSHRTargets(MSHR *mshr, const PacketPtr pkt, CacheBlk *blk)
                 // responseLatency is the latency of the return path
                 // from lower level caches/memory to an upper level cache or
                 // the core.
+                /*
                 completion_time += clockEdge(responseLatency) +
                     (transfer_offset ? pkt->payloadDelay : 0);
+                */
+                //Adding part start
 
+                if(params_name == "system.l2"){
+                    Cycles bankBlockLat = Cycles(0);
+                    uint64_t bankAddr = calcBankAddr(tgt_pkt->getAddr());
+
+                    //For Update BankAvailableCycles in MSHR Response..
+                    updateBankCycles(bankAddr, responseLatency);
+                    //For Check BankAvailableCycles in MSHR Response
+                    bankBlockLat += checkBankCycles(bankAddr);
+                    completion_time = clockEdge(bankBlockLat) +
+                                      (transfer_offset ? pkt->payloadDelay : 0);
+
+
+                }else{
+                    completion_time += clockEdge(responseLatency) +
+                                       (transfer_offset ? pkt->payloadDelay : 0);
+                }
+                //Adding part end
                 assert(!tgt_pkt->req->isUncacheable());
 
                 assert(tgt_pkt->req->requestorId() < system->maxRequestors());
@@ -789,9 +809,27 @@ Cache::serviceMSHRTargets(MSHR *mshr, const PacketPtr pkt, CacheBlk *blk)
                 // responseLatency is the latency of the return path
                 // from lower level caches/memory to an upper level cache or
                 // the core.
+                /*
                 completion_time += clockEdge(responseLatency) +
                     pkt->payloadDelay;
-                tgt_pkt->req->setExtraData(0);
+                */
+                //Adding part start
+                if(params_name == "system.l2"){
+                    Cycles bankBlockLat = Cycles(0);
+                    uint64_t bankAddr = calcBankAddr(tgt_pkt->getAddr());
+
+                    //For Update BankAvailableCycles in MSHR Response..
+                    updateBankCycles(bankAddr, responseLatency);
+                    //For Check BankAvailableCycles in MSHR Response
+                    bankBlockLat += checkBankCycles(bankAddr);
+                    completion_time = clockEdge(bankBlockLat) +
+                                      pkt->payloadDelay;
+                }else{
+                    completion_time += clockEdge(responseLatency) +
+                                       pkt->payloadDelay;
+                }
+                //Adding part end
+                 tgt_pkt->req->setExtraData(0);
             } else {
                 if (is_invalidate && blk && blk->isValid()) {
                     // We are about to send a response to a cache above
@@ -807,9 +845,30 @@ Cache::serviceMSHRTargets(MSHR *mshr, const PacketPtr pkt, CacheBlk *blk)
                 // not a cache fill, just forwarding response
                 // responseLatency is the latency of the return path
                 // from lower level cahces/memory to the core.
+                /*
                 completion_time += clockEdge(responseLatency) +
                     pkt->payloadDelay;
-                if (!is_error) {
+                */
+                //Adding part start
+
+                if(params_name == "system.l2"){
+                    Cycles bankBlockLat = Cycles(0);
+                    uint64_t bankAddr = calcBankAddr(tgt_pkt->getAddr());
+
+                    //For Update BankAvailableCycles in MSHR Response..
+                    updateBankCycles(bankAddr, responseLatency);
+                    //For Check BankAvailableCycles in MSHR Response
+                    bankBlockLat += checkBankCycles(bankAddr);
+                    completion_time = clockEdge(bankBlockLat) +
+                                      pkt->payloadDelay;
+
+                }else{
+                    completion_time += clockEdge(responseLatency) +
+                                       pkt->payloadDelay;
+                }
+
+                //Adding part end
+                 if (!is_error) {
                     if (pkt->isRead()) {
                         // sanity check
                         assert(pkt->matchAddr(tgt_pkt));
