@@ -118,6 +118,7 @@ class BaseTags : public ClockedObject
         BaseTags &tags;
         //yongjun : add STAT deadblcok
         statistics::Scalar deadblock;
+        statistics::Scalar Nondeadblock;
 
         /** Per tick average of the number of tags that hold valid data. */
         statistics::Average tagsInUse;

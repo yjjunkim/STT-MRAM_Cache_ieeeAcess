@@ -218,10 +218,12 @@ BaseTags::print()
 BaseTags::BaseTagStats::BaseTagStats(BaseTags &_tags)
     : statistics::Group(&_tags),
     tags(_tags),
-
+    //yongjun : deadblock result
     ADD_STAT(deadblock, statistics::units::Count::get(),
            "Total number of Dead Block Count in Cache"),
-
+    ADD_STAT(Nondeadblock, statistics::units::Count::get(),
+           "Total number of Dead Block Count in Cache"),
+    // end
     ADD_STAT(tagsInUse, statistics::units::Rate<
                 statistics::units::Tick, statistics::units::Count>::get(),
              "Average ticks per tags in use"),

@@ -160,12 +160,12 @@ class BaseSetAssoc : public BaseTags
     void updataLocalCounterToTags(Addr addr, int is_hit){
         indexingPolicy->updateLocalCounter(addr, is_hit);
     }
-    // yongjun : writeback PROI
+    // yongjun : writeback PROI, Write hit
 
     void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks)
     {
         int local_cnt_value = 0;
-        int thres = 16;
+        int thres = 12;
         const std::vector<ReplaceableEntry*> entries =
                 indexingPolicy->getPossibleEntries(addr);
         if((params_name == "system.l2.tags")) {
@@ -180,13 +180,16 @@ class BaseSetAssoc : public BaseTags
             //int setIdx = indexingPolicy->getSetIdx(addr);
             //local_cnt_value = indexingPolicy->getLocalCounter(addr);
             if((local_cnt_value <= thres) && (!is_invalid)) {
-            //if((!is_invalid)) {
                 CacheBlk *victim_dead = static_cast<CacheBlk *>(replacementPolicy->getVictim(
                         entries, 1));
                 // IF NULL DON'T INSERT
                 if (victim_dead != NULL) {
+                    stats.deadblock++;
                     evict_blks.push_back(victim_dead);
                 }
+            }
+            else if((local_cnt_value > thres) && (!is_invalid)){
+                stats.Nondeadblock++;
             }
         }
     }
@@ -212,7 +215,7 @@ class BaseSetAssoc : public BaseTags
         // Get possible entries to be victimized
         // yongjun : set blocks
         int local_cnt_value = 0;
-        int thres = 16;
+        int thres = 12;
         const std::vector<ReplaceableEntry*> entries =
             indexingPolicy->getPossibleEntries(addr);
 
@@ -256,17 +259,9 @@ class BaseSetAssoc : public BaseTags
                     evict_blks.push_back(victim_dead);
                     //uint8_t* data = victim_dead->data;
                     //std::cout << "data = " <<*data << '\n';
-                    //if(*data == 0){
-                    //    std::cout<< "null" << '\n';
-                    //}
-                    //if(*data !=0){
-                    //    std::cout << data << '\n';
-                    //}
                     //for(int i =0; i < 64; i++){
                     //data[i] = tmp;
                     //}
-                    //std::cout<< data[0] << '\n';
-                    // get size?
                     //std::memset(victim_dead->data, 0, 64);
                     //std::memcpy(victim_dead->data, all_zero_p, 64);
                     //std::memcpy(p, getConstPtr<uint8_t>(), getSize());
@@ -275,8 +270,9 @@ class BaseSetAssoc : public BaseTags
                     //}
                     //std::cout<<"no preset !!"<< '\n';
                 }
-
-
+            }
+            else if((local_cnt_value > thres) && (!is_invalid)){
+                stats.Nondeadblock++;
             }
         }
 
