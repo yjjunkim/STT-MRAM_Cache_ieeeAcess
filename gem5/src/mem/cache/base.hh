@@ -109,9 +109,8 @@ class BaseCache : public ClockedObject
   public:
 
     //Adding Part Start
-    std::string params_name;
-    //int tempForWrite = 0;
-    //int tempForRead = 0;
+    //std::string params_name;
+
 
     char old_blk[512];
     char new_blk[512];
@@ -119,6 +118,7 @@ class BaseCache : public ClockedObject
     /**
      * Reasons for caches to be blocked.
      */
+     
     enum BlockedCause
     {
         Blocked_NoMSHRs = MSHRQueue_MSHRs,

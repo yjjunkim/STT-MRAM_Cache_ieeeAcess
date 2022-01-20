@@ -161,11 +161,10 @@ class BaseSetAssoc : public BaseTags
         indexingPolicy->updateLocalCounter(addr, is_hit);
     }
     // yongjun : writeback PROI, Write hit
-
     void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks)
     {
         int local_cnt_value = 0;
-        int thres = 12;
+        int thres = 16;
         const std::vector<ReplaceableEntry*> entries =
                 indexingPolicy->getPossibleEntries(addr);
         if((params_name == "system.l2.tags")) {
@@ -178,7 +177,7 @@ class BaseSetAssoc : public BaseTags
                 }
             }
             //int setIdx = indexingPolicy->getSetIdx(addr);
-            //local_cnt_value = indexingPolicy->getLocalCounter(addr);
+            local_cnt_value = indexingPolicy->getLocalCounter(addr);
             if((local_cnt_value <= thres) && (!is_invalid)) {
                 CacheBlk *victim_dead = static_cast<CacheBlk *>(replacementPolicy->getVictim(
                         entries, 1));
@@ -215,7 +214,7 @@ class BaseSetAssoc : public BaseTags
         // Get possible entries to be victimized
         // yongjun : set blocks
         int local_cnt_value = 0;
-        int thres = 12;
+        int thres = 16;
         const std::vector<ReplaceableEntry*> entries =
             indexingPolicy->getPossibleEntries(addr);
 
