@@ -227,6 +227,9 @@ class FALRU : public BaseTags
     void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks){
         return;
     }
+    int getIsInvalid(){
+        return 1;
+    }
     /**
      * Insert the new block into the cache and update replacement data.
      *

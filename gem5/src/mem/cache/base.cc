@@ -159,6 +159,8 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
         "Compressed cache %s does not have a compression algorithm", name());
     if (compressor)
         compressor->setCache(this);
+
+    bankAvailableCycles = new Cycles[bankNumber];
 }
 
 BaseCache::~BaseCache()
@@ -1572,11 +1574,11 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         assert(!pkt->needsResponse());
 
         // Adding Parts Start
-        
         if (params_name == "system.l2"){
 
             // yongjun : PROI
             // Write hit
+            //baseline
             if((pkt->isWriteback()) && (is_hit) && (params_name == "system.l2")){
                 std::vector<CacheBlk*> dead_evict_blks;
                 const Addr addr_test = pkt->getAddr();
@@ -1821,6 +1823,11 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
     const bool has_old_data = blk && blk->isValid();
     const std::string old_state = blk ? blk->print() : "";
 
+    //yongjun
+    int is_invalid = 0;
+    int is_preset = 0;
+    int is_fastwrite = 0;
+
     // When handling a fill, we should have no writes to this line.
     assert(addr == pkt->getBlockAddr(blkSize));
     assert(!writeBuffer.findMatch(addr, is_secure));
@@ -1833,6 +1840,26 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
         // with the temporary storage
         // yongjun : allocateBlock 함수 호출, blk = old_data
         blk = allocate ? allocateBlock(pkt, writebacks) : nullptr;
+
+        // yongjun : victim was invalid? check
+        if(params_name == "system.l2") {
+            //is_invalid = tags->is_invalid_victm;
+            is_invalid = tags->getIsInvalid();
+            uint8_t* data = blk->data;
+            int flag_one = 0;
+            for(int i = 0; i < 64; i++){
+                std::string s;
+                s = std::bitset<8>(data[i] & 0xff).to_string();
+                for(int j = 0; j < 8; j++){
+                    if(s[j] =='1') flag_one = 1;
+                }
+            }
+            if(flag_one == 0) is_preset = 1;
+            else if(flag_one == 1) is_preset =0;
+
+            is_fastwrite = is_invalid & is_preset;
+
+        }
 
         if (!blk) {
             // No replaceable block or a mostly exclusive
@@ -1899,7 +1926,6 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
         assert(pkt->hasData());
         assert(pkt->getSize() == blkSize);
         // yongjun : memory updata : pkt 에 있는 data 로 업데이트 한다.
-        // 여기 메모리에서 올라오고 내려가는 데이터 있음.
         if (params_name == "system.l2"){
             updateBlockDataForL2_mem(blk, pkt, has_old_data);
         }else{
@@ -1917,10 +1943,18 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
     if(params_name == "system.l2"){
         uint64_t bankAddr = calcBankAddr(pkt->getAddr());
         //For Update BankAvailableCycles in Fill, Writeback.. (Default)
-        updateBankCycles(bankAddr, writeLatency);
         //yongjun : PROI fast write part
         //dataLatency = 20
         //writeLatency = 50
+        //baseline
+        if(is_fastwrite){
+            updateBankCycles(bankAddr, dataLatency);
+            stats.fastwrite++;
+        }
+        else{
+            updateBankCycles(bankAddr, writeLatency);
+            stats.slowwrite++;
+        }
     }
     //Adding part end
 
@@ -1975,7 +2009,7 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
     }
 
     //yongjun : preset
-
+    //baseline
     if(params_name == "system.l2") {
         int narrow_set = 0;
         int flag[4];
@@ -1986,6 +2020,7 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
             //std::cout<<"dead block"<<'\n';
             stats.DeadblockCount++;
             uint8_t tmp = 0;
+            //uint8_t tmp = 255;
             uint8_t *data = evict_blks[1]->data;
             for (int i = 0; i < 64; i++) {
                 std::string s;
@@ -2032,6 +2067,7 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
 
 
     // Insert new block at victimized entry
+    //yongjun : invalid to valid
     tags->insertBlock(pkt, victim);
 
     // If using a compressor, set compression data. This must be done after
@@ -2600,6 +2636,11 @@ BaseCache::CacheStats::CacheStats(BaseCache &c)
            "number of Non narrow width value in Cache block"),
     ADD_STAT(DeadblockCount, statistics::units::Count::get(),
            "number of Deadblock in Cache"),
+
+    ADD_STAT(fastwrite, statistics::units::Count::get(),
+           "number of fastwrite"),
+    ADD_STAT(slowwrite, statistics::units::Count::get(),
+           "number of slowwrite"),
 
     // end
 

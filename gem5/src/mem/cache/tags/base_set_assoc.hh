@@ -89,6 +89,12 @@ class BaseSetAssoc : public BaseTags
     replacement_policy::Base *replacementPolicy;
 
   public:
+    //yongjun : fast write
+    int is_invalid_victim;
+    int getIsInvalid(){
+        return is_invalid_victim;
+    }
+    //end
     /** Convenience typedef. */
      typedef BaseSetAssocParams Params;
 
@@ -223,6 +229,12 @@ class BaseSetAssoc : public BaseTags
         // Choose replacement victim from replacement candidates
         CacheBlk* victim = static_cast<CacheBlk*>(replacementPolicy->getVictim(
                                 entries));
+        if(victim->isValid() == 0){
+            is_invalid_victim = 1;
+        }
+        else if(victim->isValid()==1){
+            is_invalid_victim = 0;
+        }
         // There is only one eviction for this replacement
         evict_blks.push_back(victim);
         //eivct_blks + data to All 0
@@ -234,6 +246,7 @@ class BaseSetAssoc : public BaseTags
         //yongjun : 2개 evict 필요, push.back ?
 
         //uint8_t tmp = 0;
+        //baseline
         //begin
         if((params_name == "system.l2.tags")){
             int is_invalid = 0;

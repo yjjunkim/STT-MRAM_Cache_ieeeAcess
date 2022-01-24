@@ -184,6 +184,10 @@ class SectorTags : public BaseTags
     void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks){
         return;
     }
+    int getIsInvalid(){
+        return 1;
+    }
+    //end
 
     /**
      * Calculate a block's offset in a sector from the address.

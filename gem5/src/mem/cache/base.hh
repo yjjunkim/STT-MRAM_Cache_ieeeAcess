@@ -1118,6 +1118,9 @@ class BaseCache : public ClockedObject
         statistics::Scalar NonNarrowWidth_preset;
         statistics::Scalar DeadblockCount;
 
+        statistics::Scalar fastwrite;
+        statistics::Scalar slowwrite;
+
 
         //end
 
