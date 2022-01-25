@@ -1120,6 +1120,8 @@ class BaseCache : public ClockedObject
 
         statistics::Scalar fastwrite;
         statistics::Scalar slowwrite;
+        statistics::Scalar validBlock;
+        statistics::Scalar invalidBlock;
 
 
         //end
