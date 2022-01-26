@@ -292,7 +292,7 @@ class BaseTags : public ClockedObject
                                  const std::size_t size,
                                  std::vector<CacheBlk*>& evict_blks) = 0;
     //yonjun : proi
-    virtual void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks) =0;
+    virtual void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks, int flag) =0;
     virtual int getIsInvalid() =0;
     //end
 

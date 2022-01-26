@@ -1250,6 +1250,12 @@ class BaseCache : public ClockedObject
         if (mshrQueue.isFull()) {
             setBlocked((BlockedCause)MSHRQueue_MSHRs);
         }
+        //yongjun
+        if (mshr->getNumTargets() == numTarget) {
+            //cout << "Blocked: " << name() << endl;
+            noTargetMSHR = mshr;
+            setBlocked(Blocked_NoTargets);
+        }
 
         if (sched_send) {
             // schedule the send

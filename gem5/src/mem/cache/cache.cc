@@ -783,7 +783,8 @@ Cache::serviceMSHRTargets(MSHR *mshr, const PacketPtr pkt, CacheBlk *blk)
                     uint64_t bankAddr = calcBankAddr(tgt_pkt->getAddr());
 
                     //For Update BankAvailableCycles in MSHR Response..
-                    updateBankCycles(bankAddr, responseLatency);
+                    //updateBankCycles(bankAddr, responseLatency);
+                    bankBlockLat += responseLatency;
                     //For Check BankAvailableCycles in MSHR Response
                     bankBlockLat += checkBankCycles(bankAddr);
                     completion_time = clockEdge(bankBlockLat) +
@@ -819,7 +820,8 @@ Cache::serviceMSHRTargets(MSHR *mshr, const PacketPtr pkt, CacheBlk *blk)
                     uint64_t bankAddr = calcBankAddr(tgt_pkt->getAddr());
 
                     //For Update BankAvailableCycles in MSHR Response..
-                    updateBankCycles(bankAddr, responseLatency);
+                    //updateBankCycles(bankAddr, responseLatency);
+                    bankBlockLat += responseLatency;
                     //For Check BankAvailableCycles in MSHR Response
                     bankBlockLat += checkBankCycles(bankAddr);
                     completion_time = clockEdge(bankBlockLat) +
@@ -856,7 +858,8 @@ Cache::serviceMSHRTargets(MSHR *mshr, const PacketPtr pkt, CacheBlk *blk)
                     uint64_t bankAddr = calcBankAddr(tgt_pkt->getAddr());
 
                     //For Update BankAvailableCycles in MSHR Response..
-                    updateBankCycles(bankAddr, responseLatency);
+                    //updateBankCycles(bankAddr, responseLatency);
+                    bankBlockLat += responseLatency;
                     //For Check BankAvailableCycles in MSHR Response
                     bankBlockLat += checkBankCycles(bankAddr);
                     completion_time = clockEdge(bankBlockLat) +

@@ -422,7 +422,8 @@ BaseCache::recvTimingReq(PacketPtr pkt)
             Cycles bankBlockLat = Cycles(0);
             uint64_t bankAddr = calcBankAddr(pkt->getAddr());
             //For Update BankAvailableCycles in Read Miss..
-            updateBankCycles(bankAddr, forwardLatency);
+            //updateBankCycles(bankAddr, forwardLatency);
+            bankBlockLat += forwardLatency;
             bankBlockLat += checkBankCycles(bankAddr);
             //For Check BankAvailableCycles in Read Miss
             forward_time = clockEdge(bankBlockLat) + pkt->headerDelay;
@@ -1582,9 +1583,13 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
             if((pkt->isWriteback()) && (is_hit) && (params_name == "system.l2")){
                 std::vector<CacheBlk*> dead_evict_blks;
                 const Addr addr_test = pkt->getAddr();
-                tags->writeHitL2_PROI(addr_test, dead_evict_blks);
+                tags->writeHitL2_PROI(addr_test, dead_evict_blks, 0);
 
                 if(dead_evict_blks.size() == 1) {
+                    if((dead_evict_blks[0]==blk)==true){
+                        dead_evict_blks[0] = NULL;
+                        tags->writeHitL2_PROI(addr_test, dead_evict_blks, 1);
+                    }
                     if((dead_evict_blks[0]==blk)==false) {
                         stats.DeadblockCount++;
                         handleEvictions(dead_evict_blks, writebacks);
@@ -1769,7 +1774,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                 //For Check BankAvailableCycles in Read Hit
                 lat += checkBankCycles(bankAddr);
                 //For Update BankAvailableCycles in Read Hit..
-                updateBankCycles(bankAddr, dataLatency);
+                //updateBankCycles(bankAddr, dataLatency);
             }
             //end
 
@@ -2038,11 +2043,6 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
                 }
                 data[i] = tmp;
                 if(narrow_set >= 4){
-                    /*for (int j = 0; j < 8; j++) {
-                        if (s[j] == '0') stats.zeroToZero_preset++;
-                        else if (s[j] == '1') stats.zeroToOne_preset++;
-                    }
-                    data[i] = tmp;*/
                     if(count(s.begin(), s.end(), '0') == 8){
                         flag[narrow_set-4] = 1;
                     }

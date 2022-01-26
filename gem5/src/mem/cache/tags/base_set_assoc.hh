@@ -167,13 +167,37 @@ class BaseSetAssoc : public BaseTags
         indexingPolicy->updateLocalCounter(addr, is_hit);
     }
     // yongjun : writeback PROI, Write hit
-    void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks)
+    void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks, int flag)
     {
         int local_cnt_value = 0;
         int thres = 16;
         const std::vector<ReplaceableEntry*> entries =
                 indexingPolicy->getPossibleEntries(addr);
-        if((params_name == "system.l2.tags")) {
+        if((params_name == "system.l2.tags") && (flag==0)) {
+            int is_invalid = 0;
+            for (const auto &candidate: entries) {
+                CacheBlk* valid_test = static_cast<CacheBlk *>(candidate);
+                bool valid_bit = valid_test->isValid();
+                if(!valid_bit){ // if has invalid entry
+                    is_invalid = 1;
+                }
+            }
+            //int setIdx = indexingPolicy->getSetIdx(addr);
+            local_cnt_value = indexingPolicy->getLocalCounter(addr);
+            if((local_cnt_value <= thres) && (!is_invalid)) {
+                CacheBlk *victim_dead = static_cast<CacheBlk *>(replacementPolicy->getVictim(
+                        entries));
+                // IF NULL DON'T INSERT
+                if (victim_dead != NULL) {
+                    stats.deadblock++;
+                    evict_blks.push_back(victim_dead);
+                }
+            }
+            else if((local_cnt_value > thres) && (!is_invalid)){
+                stats.Nondeadblock++;
+            }
+        }
+        else if((params_name == "system.l2.tags") && (flag==1)) {
             int is_invalid = 0;
             for (const auto &candidate: entries) {
                 CacheBlk* valid_test = static_cast<CacheBlk *>(candidate);
@@ -229,11 +253,12 @@ class BaseSetAssoc : public BaseTags
         // Choose replacement victim from replacement candidates
         CacheBlk* victim = static_cast<CacheBlk*>(replacementPolicy->getVictim(
                                 entries));
-        if(victim->isValid() == 0){
-            is_invalid_victim = 1;
-        }
-        else if(victim->isValid()==1){
-            is_invalid_victim = 0;
+        if((params_name == "system.l2.tags")) {
+            if (victim->isValid() == 0) {
+                is_invalid_victim = 1;
+            } else if (victim->isValid() == 1) {
+                is_invalid_victim = 0;
+            }
         }
         // There is only one eviction for this replacement
         evict_blks.push_back(victim);
@@ -254,7 +279,9 @@ class BaseSetAssoc : public BaseTags
                 CacheBlk* valid_test = static_cast<CacheBlk *>(candidate);
                 bool valid_bit = valid_test->isValid();
                 if(!valid_bit){ // if has invalid entry
-                    is_invalid = 1;
+                    if(valid_test != victim) {
+                        is_invalid = 1;
+                    }
                 }
             }
             int setIdx = indexingPolicy->getSetIdx(addr);

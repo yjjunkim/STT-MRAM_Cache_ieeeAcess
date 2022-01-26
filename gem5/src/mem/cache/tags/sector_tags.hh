@@ -181,7 +181,7 @@ class SectorTags : public BaseTags
     void updataLocalCounterToTags(Addr addr, int is_hit){
         return;
     }
-    void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks){
+    void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks, int flag){
         return;
     }
     int getIsInvalid(){
