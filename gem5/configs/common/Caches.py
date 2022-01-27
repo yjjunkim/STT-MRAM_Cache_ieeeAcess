@@ -52,7 +52,9 @@ class L1Cache(Cache):
     data_latency = 4
     response_latency = 4
     fill_latency = 4
+    write_latency = 4
     mshrs = 4
+    bank_number = 8
     tgts_per_mshr = 20
 
 class L1_ICache(L1Cache):
@@ -69,8 +71,11 @@ class L2Cache(Cache):
     data_latency = 20
     response_latency = 20
     fill_latency = 20
+    write_latency = 50
     mshrs = 20
+    #tgts_per_mshr = 1
     tgts_per_mshr = 12
+    bank_number = 1
     write_buffers = 8
 
 class IOCache(Cache):
@@ -79,8 +84,10 @@ class IOCache(Cache):
     data_latency = 50
     response_latency = 50
     fill_latency = 50
+    write_latency = 50
     mshrs = 20
     size = '1kB'
+    bank_number = 8
     tgts_per_mshr = 12
 
 class PageTableWalkerCache(Cache):
@@ -88,9 +95,11 @@ class PageTableWalkerCache(Cache):
     tag_latency = 2
     data_latency = 2
     fill_latency = 2
+    write_latency = 2
     response_latency = 2
     mshrs = 10
     size = '1kB'
+    bank_number = 8
     tgts_per_mshr = 12
 
     # the x86 table walker actually writes to the table-walker cache
