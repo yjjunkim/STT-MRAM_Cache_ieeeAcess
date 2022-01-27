@@ -1854,8 +1854,6 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
         if(params_name == "system.l2") {
             //is_invalid = tags->is_invalid_victm;
             is_invalid = tags->getIsInvalid();
-            if(!is_invalid) stats.validBlock++;
-            else if(is_invalid) stats.invalidBlock++;
             uint8_t* data = blk->data;
             int flag_one = 0;
             for(int i = 0; i < 64; i++){
@@ -2647,10 +2645,7 @@ BaseCache::CacheStats::CacheStats(BaseCache &c)
            "number of fastwrite"),
     ADD_STAT(slowwrite, statistics::units::Count::get(),
            "number of slowwrite"),
-    ADD_STAT(validBlock, statistics::units::Count::get(),
-           "number of valid block"),
-    ADD_STAT(invalidBlock, statistics::units::Count::get(),
-           "number of valid block"),
+
 
     // end
 
