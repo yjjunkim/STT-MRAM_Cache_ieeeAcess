@@ -1251,11 +1251,13 @@ class BaseCache : public ClockedObject
             setBlocked((BlockedCause)MSHRQueue_MSHRs);
         }
         //yongjun
-        if (mshr->getNumTargets() == numTarget) {
+        //baseline
+        /*if (mshr->getNumTargets() == numTarget) {
             //cout << "Blocked: " << name() << endl;
             noTargetMSHR = mshr;
             setBlocked(Blocked_NoTargets);
-        }
+        }*/
+        //end SPEC_BASE_MoreEvict_tgts1
 
         if (sched_send) {
             // schedule the send

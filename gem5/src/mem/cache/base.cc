@@ -1868,8 +1868,7 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
             if(flag_one == 0) is_preset = 1;
             else if(flag_one == 1) is_preset =0;
 
-            //is_fastwrite = is_invalid & is_preset;
-            is_fastwrite = is_invalid;
+            is_fastwrite = is_invalid & is_preset;
 
         }
 
