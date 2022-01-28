@@ -273,7 +273,7 @@ class BaseSetAssoc : public BaseTags
         //uint8_t tmp = 0;
         //baseline
         //begin
-        /*if((params_name == "system.l2.tags")){
+        if((params_name == "system.l2.tags")){
             int is_invalid = 0;
             for (const auto &candidate: entries) {
                 CacheBlk* valid_test = static_cast<CacheBlk *>(candidate);
@@ -313,7 +313,7 @@ class BaseSetAssoc : public BaseTags
             else if((local_cnt_value > thres) && (!is_invalid)){
                 stats.Nondeadblock++;
             }
-        }*/
+        }
 
 
 
