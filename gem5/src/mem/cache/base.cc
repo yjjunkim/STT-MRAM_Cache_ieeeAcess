@@ -1580,7 +1580,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
             // yongjun : PROI
             // Write hit
             //baseline
-            if((pkt->isWriteback()) && (is_hit) && (params_name == "system.l2")){
+            /*if((pkt->isWriteback()) && (is_hit) && (params_name == "system.l2")){
                 std::vector<CacheBlk*> dead_evict_blks;
                 const Addr addr_test = pkt->getAddr();
                 tags->writeHitL2_PROI(addr_test, dead_evict_blks, 0);
@@ -1639,7 +1639,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                         }
                     }
                 }
-            }
+            }*/
             //end
             updateBlockDataForL2(blk, pkt, has_old_data);
 
@@ -1957,7 +1957,7 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
         //writeLatency = 50
         //baseline
         if(is_fastwrite){
-            updateBankCycles(bankAddr, dataLatency);
+            updateBankCycles(bankAddr, writeLatency);
             stats.fastwrite++;
         }
         else{
@@ -2019,7 +2019,7 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
 
     //yongjun : preset
     //baseline
-    if(params_name == "system.l2") {
+    /*if(params_name == "system.l2") {
         int narrow_set = 0;
         int flag[4];
         for(int k = 0; k < 4; k++){
@@ -2063,7 +2063,7 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
 
             }
         }
-    }
+    }*/
 
 
 
