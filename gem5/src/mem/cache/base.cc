@@ -1594,12 +1594,20 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                         stats.DeadblockCount++;
                         handleEvictions(dead_evict_blks, writebacks);
                         int narrow_set = 0;
+                        uint8_t tmp = 0;
+                        //uint8_t tmp = 255;
+                        //8,16,32 start
+                        int value_8_flag = 0; // 0 or 1
+                        int value_16_flag[4];    // 0, 1, 2, 3
+                        int value_16_idx = 0;
+                        int value_32_flag[8] ={0,};    // 0~8
+                        int value_32_idx = 0;
                         int flag[4];
                         for(int k = 0; k < 4; k++){
                             flag[k] = 0;
+                            value_16_flag[k] = 0;
                         }
-                        uint8_t tmp = 0;
-                        //uint8_t tmp = 255;
+                        //end
                         uint8_t *data = dead_evict_blks[0]->data;
                         for (int i = 0; i < 64; i++) {
                             std::string s;
@@ -1635,6 +1643,61 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                                     flag[k] = 0;
                                 }
                             }
+                            //yongjun : 8, 16, 32bit all zeor value
+                            //8 bit
+                            if(value_8_flag == 0){
+                                if(count(s.begin(), s.end(), '0') == 8){
+                                    lowOrder_8bit++;
+                                    value_8_flag = 1;
+                                }
+                            }
+                            if(value_8_flag == 1){
+                                if(count(s.begin(), s.end(), '0') == 8){
+                                    highOrder_8bit++;
+                                    value_8_flag = 0;
+                                }
+                            }
+                            //16 bit
+                            if(value_16_idx == 4){
+                                if(value_16_flag[0] && value_16_flag[1]){
+                                    lowOrder_16bit++;
+                                }
+                                if(value_16_flag[2] && value_16_flag[3]){
+                                    highOrder_16bit++;
+                                }
+                                value_16_idx = 0;
+                            }
+                            if(count(s.begin(), s.end(), '0') == 8){
+                                value_16_flag[value_16_idx] = 1;
+                            }
+                            if(count(s.begin(), s.end(), '0') != 8){
+                                value_16_flag[value_16_idx] = 0;
+                            }
+                            value_16_idx++;
+
+                            //32 bit
+                            if(value_32_idx == 8){
+                                if(value_32_flag[0] && value_32_flag[1]&& value_32_flag[2]&& value_32_flag[3]){
+                                    lowOrder_32bit++;
+                                }
+                                if(value_32_flag[4] && value_32_flag[5]&& value_32_flag[6]&& value_32_flag[7]){
+                                    highOrder_32bit++;
+                                }
+                                value_32_idx = 0;
+                            }
+                            if(count(s.begin(), s.end(), '0') == 8){
+                                value_32_flag[value_32_idx] = 1;
+                            }
+                            if(count(s.begin(), s.end(), '0') != 8){
+                                value_32_flag[value_32_idx] = 0;
+                            }
+                            value_32_idx++;
+
+
+
+
+                            //end
+
 
                         }
                     }
@@ -2638,6 +2701,23 @@ BaseCache::CacheStats::CacheStats(BaseCache &c)
            "number of narrow width value in Cache block"),
     ADD_STAT(NonNarrowWidth_preset, statistics::units::Count::get(),
            "number of Non narrow width value in Cache block"),
+
+    ADD_STAT(highOrder_8bit, statistics::units::Count::get(),
+           "number of highOrder_8bit in Cache block"),
+    ADD_STAT(lowOrder_8bit, statistics::units::Count::get(),
+           "number of lowOrder_8bit in Cache block"),
+
+    ADD_STAT(highOrder_16bit, statistics::units::Count::get(),
+           "number of highOrder_16bit in Cache block"),
+    ADD_STAT(lowOrder_16bit, statistics::units::Count::get(),
+           "number of lowOrder_16bit in Cache block"),
+
+    ADD_STAT(highOrder_32bit, statistics::units::Count::get(),
+           "number of highOrder_32bit in Cache block"),
+    ADD_STAT(lowOrder_32bit, statistics::units::Count::get(),
+           "number of lowOrder_32bit in Cache block"),
+
+
     ADD_STAT(DeadblockCount, statistics::units::Count::get(),
            "number of Deadblock in Cache"),
 
