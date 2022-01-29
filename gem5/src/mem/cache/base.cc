@@ -894,72 +894,117 @@ BaseCache::print_blk(const void* d, int len, int is_old,int is_mem)
             break;
     }
 
-
-    int value_8_flag = 0; // 0 or 1
-    int value_16_flag[4];    // 0, 1, 2, 3
-    int value_16_idx = 0;
-    int value_32_flag[8] ={0,};    // 0~8
+    //yongjun : counter word
+    int value_32_zero[4] = {0,};
+    int value_32_one[4] = {0,};
     int value_32_idx = 0;
-    for(int k = 0; k < 4; k++){
-        value_16_flag[k] = 0;
-    }
+
+    int value_64_zero[8] = {0,};
+    int value_64_one[8] = {0,};
+    int value_64_idx = 0;
 
     if(is_old==0) {
         for (int i = 0; i < 64; i++) {
             std::string s;
             s = std::bitset<8>(data[i] & 0xff).to_string();
 
-            //yongjun : 8, 16, 32bit all zeor value
-            //8 bit
-            if (value_8_flag == 0) {
-                if (count(s.begin(), s.end(), '0') == 8) {
-                    stats.lowOrder_8bit++;
-                    value_8_flag = 1;
-                }
-            }
-            else if (value_8_flag == 1) {
-                if (count(s.begin(), s.end(), '0') == 8) {
-                    stats.highOrder_8bit++;
-                    value_8_flag = 0;
-                }
-            }
-            //16 bit
-            if (value_16_idx == 4) {
-                if (value_16_flag[0] && value_16_flag[1]) {
-                    stats.lowOrder_16bit++;
-                }
-                if (value_16_flag[2] && value_16_flag[3]) {
-                    stats.highOrder_16bit++;
-                }
-                value_16_idx = 0;
-            }
-            if (count(s.begin(), s.end(), '0') == 8) {
-                value_16_flag[value_16_idx] = 1;
-            }
-            if (count(s.begin(), s.end(), '0') != 8) {
-                value_16_flag[value_16_idx] = 0;
-            }
-            value_16_idx++;
+            //yongjun : 32, 64bit all zeor value
 
             //32 bit
-            if (value_32_idx == 8) {
-                if (value_32_flag[0] && value_32_flag[1] && value_32_flag[2] && value_32_flag[3]) {
-                    stats.lowOrder_32bit++;
+            if(count(s.begin(), s.end(), '0') == 8){
+                value_32_zero[value_32_idx] = 1;
+                value_64_zero[value_64_idx] = 1;
+
+            }
+            else if(count(s.begin(), s.end(), '1') == 8){
+                value_32_one[value_32_idx] = 1;
+                value_64_one[value_64_idx] = 1;
+            }
+            else{
+                value_32_zero[value_32_idx] = 0;
+                value_64_zero[value_64_idx] = 0;
+                value_32_one[value_32_idx] = 0;
+                value_64_one[value_64_idx] = 0;
+            }
+            //32 condition
+            if(value_32_idx == 3){
+                // zero value
+                int change = 0;
+                if(value_32_zero[0] && value_32_zero[1] && value_32_zero[2] && value_32_zero[3]){
+                    stats.allZero32bit++;
+                    change = 1;
                 }
-                if (value_32_flag[4] && value_32_flag[5] && value_32_flag[6] && value_32_flag[7]) {
-                    stats.highOrder_32bit++;
+                else if(value_32_zero[0] && value_32_zero[1]){
+                    stats.lowZero32bit++;
+                    change = 1;
+                }
+                else if(value_32_zero[2] && value_32_zero[3]){
+                    stats.highZero32bit++;
+                    change = 1;
+                }
+                // one value
+                if(value_32_one[0] && value_32_one[1] && value_32_one[2] && value_32_one[3]){
+                    stats.allOne32bit++;
+                    change = 1;
+                }
+                else if(value_32_one[0] && value_32_one[1]){
+                    stats.lowOne32bit++;
+                    change = 1;
+                }
+                else if(value_32_one[2] && value_32_one[3]){
+                    stats.highOne32bit++;
+                    change = 1;
+                }
+                else if(change == 0){
+                    stats.nonNarrow32bit++;
                 }
                 value_32_idx = 0;
             }
-            if (count(s.begin(), s.end(), '0') == 8) {
-                value_32_flag[value_32_idx] = 1;
+            else{
+                value_32_idx++;
             }
-            if (count(s.begin(), s.end(), '0') != 8) {
-                value_32_flag[value_32_idx] = 0;
-            }
-            value_32_idx++;
 
+            //64 condition
+            if(value_64_idx == 7){
+                // zero value
+                int change = 0;
+                if(value_64_zero[0] && value_64_zero[1] && value_64_zero[2] && value_64_zero[3]
+                   && value_64_zero[4] && value_64_zero[5] && value_64_zero[6] && value_64_zero[7]){
+                    stats.allZero64bit++;
+                    change = 1;
+                }
+                else if(value_64_zero[0] && value_64_zero[1] && value_64_zero[2] && value_64_zero[3]){
+                    stats.lowZero64bit++;
+                    change = 1;
+                }
+                else if(value_64_zero[4] && value_64_zero[5] && value_64_zero[6] && value_64_zero[7]){
+                    stats.highZero64bit++;
+                    change = 1;
+                }
+                // one value
+                if(value_64_one[0] && value_64_one[1] && value_64_one[2] && value_64_one[3]
+                   && value_64_one[4] && value_64_one[5] && value_64_one[6] && value_64_one[7]){
+                    stats.allOne64bit++;
+                    change = 1;
+                }
+                else if(value_64_one[0] && value_64_one[1] && value_64_one[2] && value_64_one[3]){
+                    stats.lowOne64bit++;
+                    change = 1;
+                }
+                else if(value_64_one[4] && value_64_one[5] && value_64_one[6] && value_64_one[7]){
+                    stats.highOne64bit++;
+                    change = 1;
+                }
+                else if(change == 0){
+                    stats.nonNarrow64bit++;
+                }
+                value_64_idx = 0;
+            }
+            else{
+                value_64_idx++;
+            }
             //end
+
 
         }
     }
@@ -1667,16 +1712,15 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                         uint8_t tmp = 0;
                         //uint8_t tmp = 255;
                         //8,16,32 start
-                        int value_8_flag = 0; // 0 or 1
-                        int value_16_flag[4];    // 0, 1, 2, 3
-                        int value_16_idx = 0;
-                        int value_32_flag[8] ={0,};    // 0~8
+                        int value_32_zero[4] = {0,};
+                        int value_32_one[4] = {0,};
                         int value_32_idx = 0;
-                        int flag[4];
-                        for(int k = 0; k < 4; k++){
-                            flag[k] = 0;
-                            value_16_flag[k] = 0;
-                        }
+
+                        int value_64_zero[8] = {0,};
+                        int value_64_one[8] = {0,};
+                        int value_64_idx = 0;
+                        int flag[4] = {0,};
+
                         //end
                         uint8_t *data = dead_evict_blks[0]->data;
                         for (int i = 0; i < 64; i++) {
@@ -1688,11 +1732,6 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                             }
                             data[i] = tmp;
                             if(narrow_set >= 4){
-                                //for (int j = 0; j < 8; j++) {
-                                //    if (s[j] == '0') stats.zeroToZero_preset++;
-                                //    else if (s[j] == '1') stats.zeroToOne_preset++;
-                                //}
-                                //data[i] = tmp;
                                 if(count(s.begin(), s.end(), '0') == 8){
                                     flag[narrow_set-4] = 1;
                                 }
@@ -1713,59 +1752,102 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                                     flag[k] = 0;
                                 }
                             }
-                            //yongjun : 8, 16, 32bit all zeor value
-                            //8 bit
-                            if(value_8_flag == 0){
-                                if(count(s.begin(), s.end(), '0') == 8){
-                                    stats.lowOrder_8bit_preset++;
-                                    value_8_flag = 1;
-                                }
-                            }
-                            else if(value_8_flag == 1){
-                                if(count(s.begin(), s.end(), '0') == 8){
-                                    stats.highOrder_8bit_preset++;
-                                    value_8_flag = 0;
-                                }
-                            }
-                            //16 bit
-                            if(value_16_idx == 4){
-                                if(value_16_flag[0] && value_16_flag[1]){
-                                    stats.lowOrder_16bit_preset++;
-                                }
-                                if(value_16_flag[2] && value_16_flag[3]){
-                                    stats.highOrder_16bit_preset++;
-                                }
-                                value_16_idx = 0;
-                            }
-                            if(count(s.begin(), s.end(), '0') == 8){
-                                value_16_flag[value_16_idx] = 1;
-                            }
-                            if(count(s.begin(), s.end(), '0') != 8){
-                                value_16_flag[value_16_idx] = 0;
-                            }
-                            value_16_idx++;
+                            //yongjun : 32, 64bit all zeor value
+                            //counter word
 
                             //32 bit
-                            if(value_32_idx == 8){
-                                if(value_32_flag[0] && value_32_flag[1]&& value_32_flag[2]&& value_32_flag[3]){
-                                    stats.lowOrder_32bit_preset++;
+                            if(count(s.begin(), s.end(), '0') == 8){
+                                value_32_zero[value_32_idx] = 1;
+                                value_64_zero[value_64_idx] = 1;
+
+                            }
+                            else if(count(s.begin(), s.end(), '1') == 8){
+                                value_32_one[value_32_idx] = 1;
+                                value_64_one[value_64_idx] = 1;
+                            }
+                            else{
+                                value_32_zero[value_32_idx] = 0;
+                                value_64_zero[value_64_idx] = 0;
+                                value_32_one[value_32_idx] = 0;
+                                value_64_one[value_64_idx] = 0;
+                            }
+                            //32 condition
+                            if(value_32_idx == 3){
+                                // zero value
+                                int change = 0;
+                                if(value_32_zero[0] && value_32_zero[1] && value_32_zero[2] && value_32_zero[3]){
+                                    stats.allZero32bit_preset++;
+                                    change = 1;
                                 }
-                                if(value_32_flag[4] && value_32_flag[5]&& value_32_flag[6]&& value_32_flag[7]){
-                                    stats.highOrder_32bit_preset++;
+                                else if(value_32_zero[0] && value_32_zero[1]){
+                                    stats.lowZero32bit_preset++;
+                                    change = 1;
+                                }
+                                else if(value_32_zero[2] && value_32_zero[3]){
+                                    stats.highZero32bit_preset++;
+                                    change = 1;
+                                }
+                                // one value
+                                if(value_32_one[0] && value_32_one[1] && value_32_one[2] && value_32_one[3]){
+                                    stats.allOne32bit_preset++;
+                                    change = 1;
+                                }
+                                else if(value_32_one[0] && value_32_one[1]){
+                                    stats.lowOne32bit_preset++;
+                                    change = 1;
+                                }
+                                else if(value_32_one[2] && value_32_one[3]){
+                                    stats.highOne32bit_preset++;
+                                    change = 1;
+                                }
+                                else if(change == 0){
+                                    stats.nonNarrow32bit_preset++;
                                 }
                                 value_32_idx = 0;
                             }
-                            if(count(s.begin(), s.end(), '0') == 8){
-                                value_32_flag[value_32_idx] = 1;
+                            else{
+                                value_32_idx++;
                             }
-                            if(count(s.begin(), s.end(), '0') != 8){
-                                value_32_flag[value_32_idx] = 0;
+
+                            //64 condition
+                            if(value_64_idx == 7){
+                                // zero value
+                                int change = 0;
+                                if(value_64_zero[0] && value_64_zero[1] && value_64_zero[2] && value_64_zero[3]
+                                && value_64_zero[4] && value_64_zero[5] && value_64_zero[6] && value_64_zero[7]){
+                                    stats.allZero64bit_preset++;
+                                    change = 1;
+                                }
+                                else if(value_64_zero[0] && value_64_zero[1] && value_64_zero[2] && value_64_zero[3]){
+                                    stats.lowZero64bit_preset++;
+                                    change = 1;
+                                }
+                                else if(value_64_zero[4] && value_64_zero[5] && value_64_zero[6] && value_64_zero[7]){
+                                    stats.highZero64bit_preset++;
+                                    change = 1;
+                                }
+                                // one value
+                                if(value_64_one[0] && value_64_one[1] && value_64_one[2] && value_64_one[3]
+                                && value_64_one[4] && value_64_one[5] && value_64_one[6] && value_64_one[7]){
+                                    stats.allOne64bit_preset++;
+                                    change = 1;
+                                }
+                                else if(value_64_one[0] && value_64_one[1] && value_64_one[2] && value_64_one[3]){
+                                    stats.lowOne64bit_preset++;
+                                    change = 1;
+                                }
+                                else if(value_64_one[4] && value_64_one[5] && value_64_one[6] && value_64_one[7]){
+                                    stats.highOne64bit_preset++;
+                                    change = 1;
+                                }
+                                else if(change == 0){
+                                    stats.nonNarrow64bit_preset++;
+                                }
+                                value_64_idx = 0;
                             }
-                            value_32_idx++;
-
-
-
-
+                            else{
+                                value_64_idx++;
+                            }
                             //end
 
 
@@ -2155,16 +2237,14 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
     if(params_name == "system.l2") {
         int narrow_set = 0;
         //8,16,32 start
-        int value_8_flag = 0; // 0 or 1
-        int value_16_flag[4];    // 0, 1, 2, 3
-        int value_16_idx = 0;
-        int value_32_flag[8] ={0,};    // 0~8
+        int value_32_zero[4] = {0,};
+        int value_32_one[4] = {0,};
         int value_32_idx = 0;
-        int flag[4];
-        for(int k = 0; k < 4; k++){
-            flag[k] = 0;
-            value_16_flag[k] = 0;
-        }
+
+        int value_64_zero[8] = {0,};
+        int value_64_one[8] = {0,};
+        int value_64_idx = 0;
+        int flag[4] = {0,};
         if (evict_blks.size() == 2) {
             //std::cout<<"dead block"<<'\n';
             stats.DeadblockCount++;
@@ -2200,55 +2280,103 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
                         flag[k] = 0;
                     }
                 }
-                //yongjun : 8, 16, 32bit all zeor value
-                //8 bit
-                if(value_8_flag == 0){
-                    if(count(s.begin(), s.end(), '0') == 8){
-                        stats.lowOrder_8bit_preset++;
-                        value_8_flag = 1;
-                    }
-                }
-                else if(value_8_flag == 1){
-                    if(count(s.begin(), s.end(), '0') == 8){
-                        stats.highOrder_8bit_preset++;
-                        value_8_flag = 0;
-                    }
-                }
-                //16 bit
-                if(value_16_idx == 4){
-                    if(value_16_flag[0] && value_16_flag[1]){
-                        stats.lowOrder_16bit_preset++;
-                    }
-                    if(value_16_flag[2] && value_16_flag[3]){
-                        stats.highOrder_16bit_preset++;
-                    }
-                    value_16_idx = 0;
-                }
-                if(count(s.begin(), s.end(), '0') == 8){
-                    value_16_flag[value_16_idx] = 1;
-                }
-                if(count(s.begin(), s.end(), '0') != 8){
-                    value_16_flag[value_16_idx] = 0;
-                }
-                value_16_idx++;
+                //yongjun : 32, 64bit all zeor value
+                //counter word
 
                 //32 bit
-                if(value_32_idx == 8){
-                    if(value_32_flag[0] && value_32_flag[1]&& value_32_flag[2]&& value_32_flag[3]){
-                        stats.lowOrder_32bit_preset++;
+                if(count(s.begin(), s.end(), '0') == 8){
+                    value_32_zero[value_32_idx] = 1;
+                    value_64_zero[value_64_idx] = 1;
+
+                }
+                else if(count(s.begin(), s.end(), '1') == 8){
+                    value_32_one[value_32_idx] = 1;
+                    value_64_one[value_64_idx] = 1;
+                }
+                else{
+                    value_32_zero[value_32_idx] = 0;
+                    value_64_zero[value_64_idx] = 0;
+                    value_32_one[value_32_idx] = 0;
+                    value_64_one[value_64_idx] = 0;
+                }
+                //32 condition
+                if(value_32_idx == 3){
+                    // zero value
+                    int change = 0;
+                    if(value_32_zero[0] && value_32_zero[1] && value_32_zero[2] && value_32_zero[3]){
+                        stats.allZero32bit_preset++;
+                        change = 1;
                     }
-                    if(value_32_flag[4] && value_32_flag[5]&& value_32_flag[6]&& value_32_flag[7]){
-                        stats.highOrder_32bit_preset++;
+                    else if(value_32_zero[0] && value_32_zero[1]){
+                        stats.lowZero32bit_preset++;
+                        change = 1;
+                    }
+                    else if(value_32_zero[2] && value_32_zero[3]){
+                        stats.highZero32bit_preset++;
+                        change = 1;
+                    }
+                    // one value
+                    if(value_32_one[0] && value_32_one[1] && value_32_one[2] && value_32_one[3]){
+                        stats.allOne32bit_preset++;
+                        change = 1;
+                    }
+                    else if(value_32_one[0] && value_32_one[1]){
+                        stats.lowOne32bit_preset++;
+                        change = 1;
+                    }
+                    else if(value_32_one[2] && value_32_one[3]){
+                        stats.highOne32bit_preset++;
+                        change = 1;
+                    }
+                    else if(change == 0){
+                        stats.nonNarrow32bit_preset++;
                     }
                     value_32_idx = 0;
                 }
-                if(count(s.begin(), s.end(), '0') == 8){
-                    value_32_flag[value_32_idx] = 1;
+                else{
+                    value_32_idx++;
                 }
-                if(count(s.begin(), s.end(), '0') != 8){
-                    value_32_flag[value_32_idx] = 0;
+
+                //64 condition
+                if(value_64_idx == 7){
+                    // zero value
+                    int change = 0;
+                    if(value_64_zero[0] && value_64_zero[1] && value_64_zero[2] && value_64_zero[3]
+                       && value_64_zero[4] && value_64_zero[5] && value_64_zero[6] && value_64_zero[7]){
+                        stats.allZero64bit_preset++;
+                        change = 1;
+                    }
+                    else if(value_64_zero[0] && value_64_zero[1] && value_64_zero[2] && value_64_zero[3]){
+                        stats.lowZero64bit_preset++;
+                        change = 1;
+                    }
+                    else if(value_64_zero[4] && value_64_zero[5] && value_64_zero[6] && value_64_zero[7]){
+                        stats.highZero64bit_preset++;
+                        change = 1;
+                    }
+                    // one value
+                    if(value_64_one[0] && value_64_one[1] && value_64_one[2] && value_64_one[3]
+                       && value_64_one[4] && value_64_one[5] && value_64_one[6] && value_64_one[7]){
+                        stats.allOne64bit_preset++;
+                        change = 1;
+                    }
+                    else if(value_64_one[0] && value_64_one[1] && value_64_one[2] && value_64_one[3]){
+                        stats.lowOne64bit_preset++;
+                        change = 1;
+                    }
+                    else if(value_64_one[4] && value_64_one[5] && value_64_one[6] && value_64_one[7]){
+                        stats.highOne64bit_preset++;
+                        change = 1;
+                    }
+                    else if(change == 0){
+                        stats.nonNarrow64bit_preset++;
+                    }
+                    value_64_idx = 0;
                 }
-                value_32_idx++;
+                else{
+                    value_64_idx++;
+                }
+                //end
 
             }
         }
@@ -2828,36 +2956,44 @@ BaseCache::CacheStats::CacheStats(BaseCache &c)
     ADD_STAT(NonNarrowWidth_preset, statistics::units::Count::get(),
            "number of Non narrow width value in Cache block"),
 
-    ADD_STAT(highOrder_8bit_preset, statistics::units::Count::get(),
+    //yongjun : counter word
+    //32bit
+    ADD_STAT(allZero32bit_preset, statistics::units::Count::get(),
            "number of highOrder_8bit in Cache block"),
-    ADD_STAT(lowOrder_8bit_preset, statistics::units::Count::get(),
+    ADD_STAT(allOne32bit_preset, statistics::units::Count::get(),
            "number of lowOrder_8bit in Cache block"),
 
-    ADD_STAT(highOrder_16bit_preset, statistics::units::Count::get(),
+    ADD_STAT(highOne32bit_preset, statistics::units::Count::get(),
            "number of highOrder_16bit in Cache block"),
-    ADD_STAT(lowOrder_16bit_preset, statistics::units::Count::get(),
+    ADD_STAT(lowOne32bit_preset, statistics::units::Count::get(),
            "number of lowOrder_16bit in Cache block"),
 
-    ADD_STAT(highOrder_32bit_preset, statistics::units::Count::get(),
+    ADD_STAT(highZero32bit_preset, statistics::units::Count::get(),
            "number of highOrder_32bit in Cache block"),
-    ADD_STAT(lowOrder_32bit_preset, statistics::units::Count::get(),
+    ADD_STAT(lowZero32bit_preset, statistics::units::Count::get(),
            "number of lowOrder_32bit in Cache block"),
 
-    ADD_STAT(highOrder_8bit, statistics::units::Count::get(),
+    ADD_STAT(nonNarrow32bit_preset, statistics::units::Count::get(),
+           "number of lowOrder_32bit in Cache block"),
+    // 64bit
+    ADD_STAT(allZero64bit_preset, statistics::units::Count::get(),
            "number of highOrder_8bit in Cache block"),
-    ADD_STAT(lowOrder_8bit, statistics::units::Count::get(),
+    ADD_STAT(allOne64bit_preset, statistics::units::Count::get(),
            "number of lowOrder_8bit in Cache block"),
 
-    ADD_STAT(highOrder_16bit, statistics::units::Count::get(),
+    ADD_STAT(highOne64bit_preset, statistics::units::Count::get(),
            "number of highOrder_16bit in Cache block"),
-    ADD_STAT(lowOrder_16bit, statistics::units::Count::get(),
+    ADD_STAT(lowOne64bit_preset, statistics::units::Count::get(),
            "number of lowOrder_16bit in Cache block"),
 
-    ADD_STAT(highOrder_32bit, statistics::units::Count::get(),
+    ADD_STAT(highZero64bit_preset, statistics::units::Count::get(),
            "number of highOrder_32bit in Cache block"),
-    ADD_STAT(lowOrder_32bit, statistics::units::Count::get(),
+    ADD_STAT(lowZero64bit_preset, statistics::units::Count::get(),
            "number of lowOrder_32bit in Cache block"),
 
+    ADD_STAT(nonNarrow64bit_preset, statistics::units::Count::get(),
+           "number of lowOrder_32bit in Cache block"),
+    //end counter word
 
     ADD_STAT(DeadblockCount, statistics::units::Count::get(),
            "number of Deadblock in Cache"),

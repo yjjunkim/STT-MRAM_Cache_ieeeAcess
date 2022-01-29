@@ -1117,20 +1117,57 @@ class BaseCache : public ClockedObject
         statistics::Scalar narrowWidth_preset;
         statistics::Scalar NonNarrowWidth_preset;
 
-        statistics::Scalar highOrder_8bit_preset;
-        statistics::Scalar lowOrder_8bit_preset;
-        statistics::Scalar highOrder_16bit_preset;
-        statistics::Scalar lowOrder_16bit_preset;
-        statistics::Scalar highOrder_32bit_preset;
-        statistics::Scalar lowOrder_32bit_preset;
 
-        statistics::Scalar highOrder_8bit;
-        statistics::Scalar lowOrder_8bit;
-        statistics::Scalar highOrder_16bit;
-        statistics::Scalar lowOrder_16bit;
-        statistics::Scalar highOrder_32bit;
-        statistics::Scalar lowOrder_32bit;
-        
+        //yongjun : 32bit
+        statistics::Scalar allZero32bit;
+        statistics::Scalar allOne32bit;
+
+        statistics::Scalar highOne32bit;
+        statistics::Scalar lowOne32bit;
+
+        statistics::Scalar highZero32bit;
+        statistics::Scalar lowZero32bit;
+
+        statistics::Scalar nonNarrow32bit;
+
+        //yongjun : 64bit
+        statistics::Scalar allZero64bit;
+        statistics::Scalar allOne64bit;
+
+        statistics::Scalar highOne64bit;
+        statistics::Scalar lowOne64bit;
+
+        statistics::Scalar highZero64bit;
+        statistics::Scalar lowZero64bit;
+
+        statistics::Scalar nonNarrow64bit;
+
+        //yongjun : 32bit preset
+        statistics::Scalar allZero32bit_preset;
+        statistics::Scalar allOne32bit_preset;
+
+        statistics::Scalar highOne32bit_preset;
+        statistics::Scalar lowOne32bit_preset;
+
+        statistics::Scalar highZero32bit_preset;
+        statistics::Scalar lowZero32bit_preset;
+
+        statistics::Scalar nonNarrow32bit_preset;
+
+        //yongjun : 64bit preset
+        statistics::Scalar allZero64bit_preset;
+        statistics::Scalar allOne64bit_preset;
+
+        statistics::Scalar highOne64bit_preset;
+        statistics::Scalar lowOne64bit_preset;
+
+        statistics::Scalar highZero64bit_preset;
+        statistics::Scalar lowZero64bit_preset;
+
+        statistics::Scalar nonNarrow64bit_preset;
+
+
+
 
 
 
