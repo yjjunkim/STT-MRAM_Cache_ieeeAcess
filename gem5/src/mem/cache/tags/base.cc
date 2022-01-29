@@ -223,6 +223,7 @@ BaseTags::BaseTagStats::BaseTagStats(BaseTags &_tags)
            "Total number of Dead Block Count in Cache"),
     ADD_STAT(Nondeadblock, statistics::units::Count::get(),
            "Total number of Dead Block Count in Cache"),
+
     // end
     ADD_STAT(tagsInUse, statistics::units::Rate<
                 statistics::units::Tick, statistics::units::Count>::get(),

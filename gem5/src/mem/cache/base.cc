@@ -893,6 +893,76 @@ BaseCache::print_blk(const void* d, int len, int is_old,int is_mem)
         if (c < 16)
             break;
     }
+
+
+    int value_8_flag = 0; // 0 or 1
+    int value_16_flag[4];    // 0, 1, 2, 3
+    int value_16_idx = 0;
+    int value_32_flag[8] ={0,};    // 0~8
+    int value_32_idx = 0;
+    for(int k = 0; k < 4; k++){
+        value_16_flag[k] = 0;
+    }
+
+    if(is_old==0) {
+        for (int i = 0; i < 64; i++) {
+            std::string s;
+            s = std::bitset<8>(data[i] & 0xff).to_string();
+
+            //yongjun : 8, 16, 32bit all zeor value
+            //8 bit
+            if (value_8_flag == 0) {
+                if (count(s.begin(), s.end(), '0') == 8) {
+                    stats.lowOrder_8bit++;
+                    value_8_flag = 1;
+                }
+            }
+            else if (value_8_flag == 1) {
+                if (count(s.begin(), s.end(), '0') == 8) {
+                    stats.highOrder_8bit++;
+                    value_8_flag = 0;
+                }
+            }
+            //16 bit
+            if (value_16_idx == 4) {
+                if (value_16_flag[0] && value_16_flag[1]) {
+                    stats.lowOrder_16bit++;
+                }
+                if (value_16_flag[2] && value_16_flag[3]) {
+                    stats.highOrder_16bit++;
+                }
+                value_16_idx = 0;
+            }
+            if (count(s.begin(), s.end(), '0') == 8) {
+                value_16_flag[value_16_idx] = 1;
+            }
+            if (count(s.begin(), s.end(), '0') != 8) {
+                value_16_flag[value_16_idx] = 0;
+            }
+            value_16_idx++;
+
+            //32 bit
+            if (value_32_idx == 8) {
+                if (value_32_flag[0] && value_32_flag[1] && value_32_flag[2] && value_32_flag[3]) {
+                    stats.lowOrder_32bit++;
+                }
+                if (value_32_flag[4] && value_32_flag[5] && value_32_flag[6] && value_32_flag[7]) {
+                    stats.highOrder_32bit++;
+                }
+                value_32_idx = 0;
+            }
+            if (count(s.begin(), s.end(), '0') == 8) {
+                value_32_flag[value_32_idx] = 1;
+            }
+            if (count(s.begin(), s.end(), '0') != 8) {
+                value_32_flag[value_32_idx] = 0;
+            }
+            value_32_idx++;
+
+            //end
+
+        }
+    }
 }
 void
 BaseCache::updateBlockDataForL2(CacheBlk *blk, const PacketPtr cpkt, bool has_old_data)
@@ -1586,10 +1656,10 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                 tags->writeHitL2_PROI(addr_test, dead_evict_blks, 0);
 
                 if(dead_evict_blks.size() == 1) {
-                    if((dead_evict_blks[0]==blk)==true){
+                    /*if((dead_evict_blks[0]==blk)==true){
                         dead_evict_blks[0] = NULL;
                         tags->writeHitL2_PROI(addr_test, dead_evict_blks, 1);
-                    }
+                    }*/
                     if((dead_evict_blks[0]==blk)==false) {
                         stats.DeadblockCount++;
                         handleEvictions(dead_evict_blks, writebacks);
@@ -1647,23 +1717,23 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                             //8 bit
                             if(value_8_flag == 0){
                                 if(count(s.begin(), s.end(), '0') == 8){
-                                    lowOrder_8bit++;
+                                    stats.lowOrder_8bit_preset++;
                                     value_8_flag = 1;
                                 }
                             }
-                            if(value_8_flag == 1){
+                            else if(value_8_flag == 1){
                                 if(count(s.begin(), s.end(), '0') == 8){
-                                    highOrder_8bit++;
+                                    stats.highOrder_8bit_preset++;
                                     value_8_flag = 0;
                                 }
                             }
                             //16 bit
                             if(value_16_idx == 4){
                                 if(value_16_flag[0] && value_16_flag[1]){
-                                    lowOrder_16bit++;
+                                    stats.lowOrder_16bit_preset++;
                                 }
                                 if(value_16_flag[2] && value_16_flag[3]){
-                                    highOrder_16bit++;
+                                    stats.highOrder_16bit_preset++;
                                 }
                                 value_16_idx = 0;
                             }
@@ -1678,10 +1748,10 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                             //32 bit
                             if(value_32_idx == 8){
                                 if(value_32_flag[0] && value_32_flag[1]&& value_32_flag[2]&& value_32_flag[3]){
-                                    lowOrder_32bit++;
+                                    stats.lowOrder_32bit_preset++;
                                 }
                                 if(value_32_flag[4] && value_32_flag[5]&& value_32_flag[6]&& value_32_flag[7]){
-                                    highOrder_32bit++;
+                                    stats.highOrder_32bit_preset++;
                                 }
                                 value_32_idx = 0;
                             }
@@ -2084,9 +2154,16 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
     //baseline
     if(params_name == "system.l2") {
         int narrow_set = 0;
+        //8,16,32 start
+        int value_8_flag = 0; // 0 or 1
+        int value_16_flag[4];    // 0, 1, 2, 3
+        int value_16_idx = 0;
+        int value_32_flag[8] ={0,};    // 0~8
+        int value_32_idx = 0;
         int flag[4];
         for(int k = 0; k < 4; k++){
             flag[k] = 0;
+            value_16_flag[k] = 0;
         }
         if (evict_blks.size() == 2) {
             //std::cout<<"dead block"<<'\n';
@@ -2123,6 +2200,55 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
                         flag[k] = 0;
                     }
                 }
+                //yongjun : 8, 16, 32bit all zeor value
+                //8 bit
+                if(value_8_flag == 0){
+                    if(count(s.begin(), s.end(), '0') == 8){
+                        stats.lowOrder_8bit_preset++;
+                        value_8_flag = 1;
+                    }
+                }
+                else if(value_8_flag == 1){
+                    if(count(s.begin(), s.end(), '0') == 8){
+                        stats.highOrder_8bit_preset++;
+                        value_8_flag = 0;
+                    }
+                }
+                //16 bit
+                if(value_16_idx == 4){
+                    if(value_16_flag[0] && value_16_flag[1]){
+                        stats.lowOrder_16bit_preset++;
+                    }
+                    if(value_16_flag[2] && value_16_flag[3]){
+                        stats.highOrder_16bit_preset++;
+                    }
+                    value_16_idx = 0;
+                }
+                if(count(s.begin(), s.end(), '0') == 8){
+                    value_16_flag[value_16_idx] = 1;
+                }
+                if(count(s.begin(), s.end(), '0') != 8){
+                    value_16_flag[value_16_idx] = 0;
+                }
+                value_16_idx++;
+
+                //32 bit
+                if(value_32_idx == 8){
+                    if(value_32_flag[0] && value_32_flag[1]&& value_32_flag[2]&& value_32_flag[3]){
+                        stats.lowOrder_32bit_preset++;
+                    }
+                    if(value_32_flag[4] && value_32_flag[5]&& value_32_flag[6]&& value_32_flag[7]){
+                        stats.highOrder_32bit_preset++;
+                    }
+                    value_32_idx = 0;
+                }
+                if(count(s.begin(), s.end(), '0') == 8){
+                    value_32_flag[value_32_idx] = 1;
+                }
+                if(count(s.begin(), s.end(), '0') != 8){
+                    value_32_flag[value_32_idx] = 0;
+                }
+                value_32_idx++;
 
             }
         }
@@ -2701,6 +2827,21 @@ BaseCache::CacheStats::CacheStats(BaseCache &c)
            "number of narrow width value in Cache block"),
     ADD_STAT(NonNarrowWidth_preset, statistics::units::Count::get(),
            "number of Non narrow width value in Cache block"),
+
+    ADD_STAT(highOrder_8bit_preset, statistics::units::Count::get(),
+           "number of highOrder_8bit in Cache block"),
+    ADD_STAT(lowOrder_8bit_preset, statistics::units::Count::get(),
+           "number of lowOrder_8bit in Cache block"),
+
+    ADD_STAT(highOrder_16bit_preset, statistics::units::Count::get(),
+           "number of highOrder_16bit in Cache block"),
+    ADD_STAT(lowOrder_16bit_preset, statistics::units::Count::get(),
+           "number of lowOrder_16bit in Cache block"),
+
+    ADD_STAT(highOrder_32bit_preset, statistics::units::Count::get(),
+           "number of highOrder_32bit in Cache block"),
+    ADD_STAT(lowOrder_32bit_preset, statistics::units::Count::get(),
+           "number of lowOrder_32bit in Cache block"),
 
     ADD_STAT(highOrder_8bit, statistics::units::Count::get(),
            "number of highOrder_8bit in Cache block"),

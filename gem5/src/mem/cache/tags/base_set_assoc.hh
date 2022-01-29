@@ -170,7 +170,7 @@ class BaseSetAssoc : public BaseTags
     void writeHitL2_PROI(Addr addr, std::vector<CacheBlk*>& evict_blks, int flag)
     {
         int local_cnt_value = 0;
-        int thres = 16;
+        int thres = 10;
         const std::vector<ReplaceableEntry*> entries =
                 indexingPolicy->getPossibleEntries(addr);
         if((params_name == "system.l2.tags") && (flag==0)) {
@@ -244,7 +244,7 @@ class BaseSetAssoc : public BaseTags
         // Get possible entries to be victimized
         // yongjun : set blocks
         int local_cnt_value = 0;
-        int thres = 16;
+        int thres = 10;
         const std::vector<ReplaceableEntry*> entries =
             indexingPolicy->getPossibleEntries(addr);
 
@@ -279,9 +279,9 @@ class BaseSetAssoc : public BaseTags
                 CacheBlk* valid_test = static_cast<CacheBlk *>(candidate);
                 bool valid_bit = valid_test->isValid();
                 if(!valid_bit){ // if has invalid entry
-                    if(valid_test != victim) {
-                        is_invalid = 1;
-                    }
+                    //if(valid_test != victim) {
+                    is_invalid = 1;
+                    //}
                 }
             }
             int setIdx = indexingPolicy->getSetIdx(addr);

@@ -1117,12 +1117,22 @@ class BaseCache : public ClockedObject
         statistics::Scalar narrowWidth_preset;
         statistics::Scalar NonNarrowWidth_preset;
 
+        statistics::Scalar highOrder_8bit_preset;
+        statistics::Scalar lowOrder_8bit_preset;
+        statistics::Scalar highOrder_16bit_preset;
+        statistics::Scalar lowOrder_16bit_preset;
+        statistics::Scalar highOrder_32bit_preset;
+        statistics::Scalar lowOrder_32bit_preset;
+
         statistics::Scalar highOrder_8bit;
         statistics::Scalar lowOrder_8bit;
         statistics::Scalar highOrder_16bit;
         statistics::Scalar lowOrder_16bit;
         statistics::Scalar highOrder_32bit;
         statistics::Scalar lowOrder_32bit;
+        
+
+
 
 
         statistics::Scalar DeadblockCount;
