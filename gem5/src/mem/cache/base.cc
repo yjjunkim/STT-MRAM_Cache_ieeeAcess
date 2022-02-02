@@ -836,6 +836,7 @@ BaseCache::print_blk(const void* d, int len, int is_old,int is_mem)
         flag[k] = 0;
     }
     std::string s;
+    int narrow_idx = 0;
     for (i = 0; i < len; i += 16) {
         //std::ostringstream line;
         narrow_set = 0;
@@ -864,6 +865,30 @@ BaseCache::print_blk(const void* d, int len, int is_old,int is_mem)
                     new_blk[(i*8) + (j*8) + l] = s[l];
                 }
             }
+            if(is_old){
+                if(narrow_set >= 4){ // 4,5,6,7 모두 1 일떄
+                    if(count(s.begin(), s.end(), '0') == 8){
+                        //std::cout<<" 8 ";
+                        flag[narrow_set-4] = 1;
+                    }
+                    else{
+                        flag[narrow_set-4] = 0;
+                    }
+                }
+                if(narrow_set == 7 && flag[0] && flag[1] && flag[2] && flag[3]){
+                    //stats.narrowWidth += 1;
+                    narrowWidth[narrow_idx] = 1;
+                    narrow_idx++;
+                    //std::cout << " narrow ! ";
+                }
+                else if(narrow_set == 7){
+                    //stats.NonNarrowWidth += 1;
+                    narrowWidth[narrow_idx] = 0;
+                    narrow_idx++;
+                }
+                if(narrow_set != 7) narrow_set += 1;
+                else narrow_set = 0;
+            }
             if(is_old==0){
                 stats.zeroNum += count(s.begin(), s.end(), '0');
                 stats.oneNum += count(s.begin(), s.end(), '1');
@@ -877,11 +902,14 @@ BaseCache::print_blk(const void* d, int len, int is_old,int is_mem)
                     }
                 }
                 if(narrow_set == 7 && flag[0] && flag[1] && flag[2] && flag[3]){
-                    stats.narrowWidth += 1;
-                    //std::cout << " narrow ! ";
+                    if(narrowWidth[narrow_idx] == 1){
+                        stats.narrowWidth += 1;
+                        narrow_idx++;
+                    }
                 }
                 else if(narrow_set == 7){
                     stats.NonNarrowWidth += 1;
+                    narrow_idx++;
                 }
                 if(narrow_set != 7) narrow_set += 1;
                 else narrow_set = 0;
@@ -903,7 +931,9 @@ BaseCache::print_blk(const void* d, int len, int is_old,int is_mem)
     int value_64_one[8] = {0,};
     int value_64_idx = 0;
 
-    if(is_old==0) {
+    int idx_32 = 0;
+    int idx_64 = 0;
+    if(is_old) {
         for (int i = 0; i < 64; i++) {
             std::string s;
             s = std::bitset<8>(data[i] & 0xff).to_string();
@@ -931,34 +961,42 @@ BaseCache::print_blk(const void* d, int len, int is_old,int is_mem)
                 // zero value
                 int change = 0;
                 if(value_32_zero[0] && value_32_zero[1] && value_32_zero[2] && value_32_zero[3]){
-                    stats.allZero32bit++;
+                    //stats.allZero32bit++;
+                    allZero32bit[idx_32] = 1;
                     change = 1;
                 }
                 else if(value_32_zero[0] && value_32_zero[1]){
-                    stats.lowZero32bit++;
+                    //stats.lowZero32bit++;
+                    lowZero32bit[idx_32] = 1;
                     change = 1;
                 }
                 else if(value_32_zero[2] && value_32_zero[3]){
-                    stats.highZero32bit++;
+                    //stats.highZero32bit++;
+                    highZero32bit[idx_32] = 1;
                     change = 1;
                 }
                 // one value
                 if(value_32_one[0] && value_32_one[1] && value_32_one[2] && value_32_one[3]){
-                    stats.allOne32bit++;
+                    //stats.allOne32bit++;
+                    allOne32bit[idx_32] = 1;
                     change = 1;
                 }
                 else if(value_32_one[0] && value_32_one[1]){
-                    stats.lowOne32bit++;
+                    //stats.lowOne32bit++;
+                    lowOne32bit[idx_32] = 1;
                     change = 1;
                 }
                 else if(value_32_one[2] && value_32_one[3]){
-                    stats.highOne32bit++;
+                    //stats.highOne32bit++;
+                    highOne32bit[idx_32] = 1;
                     change = 1;
                 }
                 else if(change == 0){
-                    stats.nonNarrow32bit++;
+                    //stats.nonNarrow32bit++;
+                    nonNarrow32bit[idx_32] = 1;
                 }
                 value_32_idx = 0;
+                idx_32++;
             }
             else{
                 value_32_idx++;
@@ -970,35 +1008,178 @@ BaseCache::print_blk(const void* d, int len, int is_old,int is_mem)
                 int change = 0;
                 if(value_64_zero[0] && value_64_zero[1] && value_64_zero[2] && value_64_zero[3]
                    && value_64_zero[4] && value_64_zero[5] && value_64_zero[6] && value_64_zero[7]){
-                    stats.allZero64bit++;
+                    //stats.allZero64bit++;
+                    allZero64bit[idx_64] = 1;
                     change = 1;
                 }
                 else if(value_64_zero[0] && value_64_zero[1] && value_64_zero[2] && value_64_zero[3]){
-                    stats.lowZero64bit++;
+                    //stats.lowZero64bit++;
+                    lowZero64bit[idx_64] = 1;
                     change = 1;
                 }
                 else if(value_64_zero[4] && value_64_zero[5] && value_64_zero[6] && value_64_zero[7]){
-                    stats.highZero64bit++;
+                    //stats.highZero64bit++;
+                    highZero64bit[idx_64] = 1;
                     change = 1;
                 }
                 // one value
                 if(value_64_one[0] && value_64_one[1] && value_64_one[2] && value_64_one[3]
                    && value_64_one[4] && value_64_one[5] && value_64_one[6] && value_64_one[7]){
-                    stats.allOne64bit++;
+                    //stats.allOne64bit++;
+                    allOne64bit[idx_64] = 1;
                     change = 1;
                 }
                 else if(value_64_one[0] && value_64_one[1] && value_64_one[2] && value_64_one[3]){
-                    stats.lowOne64bit++;
+                    //stats.lowOne64bit++;
+                    lowOne64bit[idx_64] = 1;
                     change = 1;
                 }
                 else if(value_64_one[4] && value_64_one[5] && value_64_one[6] && value_64_one[7]){
-                    stats.highOne64bit++;
+                    //stats.highOne64bit++;
+                    highOne64bit[idx_64] = 1;
                     change = 1;
                 }
                 else if(change == 0){
-                    stats.nonNarrow64bit++;
+                    //stats.nonNarrow64bit++;
+                    nonNarrow64bit[idx_64] = 1;
                 }
                 value_64_idx = 0;
+                idx_64++;
+            }
+            else{
+                value_64_idx++;
+            }
+            //end
+
+
+        }
+    }
+    else if(is_old==0) {
+        for (int i = 0; i < 64; i++) {
+            std::string s;
+            s = std::bitset<8>(data[i] & 0xff).to_string();
+
+            //yongjun : 32, 64bit all zeor value
+
+            //32 bit
+            if(count(s.begin(), s.end(), '0') == 8){
+                value_32_zero[value_32_idx] = 1;
+                value_64_zero[value_64_idx] = 1;
+
+            }
+            else if(count(s.begin(), s.end(), '1') == 8){
+                value_32_one[value_32_idx] = 1;
+                value_64_one[value_64_idx] = 1;
+            }
+            else{
+                value_32_zero[value_32_idx] = 0;
+                value_64_zero[value_64_idx] = 0;
+                value_32_one[value_32_idx] = 0;
+                value_64_one[value_64_idx] = 0;
+            }
+            //32 condition
+            if(value_32_idx == 3){
+                // zero value
+                int change = 0;
+                if(value_32_zero[0] && value_32_zero[1] && value_32_zero[2] && value_32_zero[3]){
+                    if(allZero32bit[idx_32]) {
+                        stats.allZero32bit++;
+                        change = 1;
+                    }
+                }
+                else if(value_32_zero[0] && value_32_zero[1]){
+                    if(lowZero32bit[idx_32]) {
+                        stats.lowZero32bit++;
+                        change = 1;
+                    }
+                }
+                else if(value_32_zero[2] && value_32_zero[3]){
+                    if(highZero32bit[idx_32]) {
+                        stats.highZero32bit++;
+                        change = 1;
+                    }
+                }
+                // one value
+                if(value_32_one[0] && value_32_one[1] && value_32_one[2] && value_32_one[3]){
+                    if(allOne32bit[idx_32]) {
+                        stats.allOne32bit++;
+                        change = 1;
+                    }
+                }
+                else if(value_32_one[0] && value_32_one[1]){
+                    if(lowOne32bit[idx_32]) {
+                        stats.lowOne32bit++;
+                        change = 1;
+                    }
+                }
+                else if(value_32_one[2] && value_32_one[3]){
+                    if(highOne32bit[idx_32]) {
+                        stats.highOne32bit++;
+                        change = 1;
+                    }
+                }
+                else if(change == 0){
+                    if(nonNarrow32bit[idx_32]) {
+                        stats.nonNarrow32bit++;
+                    }
+                }
+                value_32_idx = 0;
+                idx_32++;
+            }
+            else{
+                value_32_idx++;
+            }
+
+            //64 condition
+            if(value_64_idx == 7){
+                // zero value
+                int change = 0;
+                if(value_64_zero[0] && value_64_zero[1] && value_64_zero[2] && value_64_zero[3]
+                   && value_64_zero[4] && value_64_zero[5] && value_64_zero[6] && value_64_zero[7]){
+                    if(allZero64bit[idx_64]) {
+                        stats.allZero64bit++;
+                        change = 1;
+                    }
+                }
+                else if(value_64_zero[0] && value_64_zero[1] && value_64_zero[2] && value_64_zero[3]){
+                    if(lowZero64bit[idx_64]) {
+                        stats.lowZero64bit++;
+                        change = 1;
+                    }
+                }
+                else if(value_64_zero[4] && value_64_zero[5] && value_64_zero[6] && value_64_zero[7]){
+                    if(highZero64bit[idx_64]) {
+                        stats.highZero64bit++;
+                        change = 1;
+                    }
+                }
+                // one value
+                if(value_64_one[0] && value_64_one[1] && value_64_one[2] && value_64_one[3]
+                   && value_64_one[4] && value_64_one[5] && value_64_one[6] && value_64_one[7]){
+                    if(allOne64bit[idx_64]) {
+                        stats.allOne64bit++;
+                        change = 1;
+                    }
+                }
+                else if(value_64_one[0] && value_64_one[1] && value_64_one[2] && value_64_one[3]){
+                    if(lowOne64bit[idx_64]) {
+                        stats.lowOne64bit++;
+                        change = 1;
+                    }
+                }
+                else if(value_64_one[4] && value_64_one[5] && value_64_one[6] && value_64_one[7]){
+                    if(highOne64bit[idx_64]) {
+                        stats.highOne64bit++;
+                        change = 1;
+                    }
+                }
+                else if(change == 0){
+                    if(nonNarrow64bit[idx_64]) {
+                        stats.nonNarrow64bit++;
+                    }
+                }
+                value_64_idx = 0;
+                idx_64++;
             }
             else{
                 value_64_idx++;
@@ -1022,6 +1203,25 @@ BaseCache::updateBlockDataForL2(CacheBlk *blk, const PacketPtr cpkt, bool has_ol
 
     //std::cout << data_update.oldData << std::endl;
     //std::cout << "OldData_mem" << std::endl;
+    for(int i = 0; i < 16; i++){
+        allZero32bit[i] = 0;
+        lowZero32bit[i] = 0;
+        highZero32bit[i] = 0;
+        allOne32bit[i] = 0;
+        lowOne32bit[i] = 0;
+        highOne32bit[i] = 0;
+        nonNarrow32bit[i] = 0;
+    }
+    for(int i = 0; i < 8; i++){
+        narrowWidth[i] = 0;
+        allZero64bit[i] = 0;
+        allOne64bit[i] = 0;
+        highOne64bit[i] = 0;
+        lowOne64bit[i] = 0;
+        highZero64bit[i] = 0;
+        lowZero64bit[i] = 0;
+        nonNarrow64bit[i] = 0;
+    }
     print_blk(blk->data, blkSize, 1, 0);
     //tracePacket("OldData", blk->data, blkSize);
     //2176340000: global: 00000000  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
@@ -1056,7 +1256,25 @@ BaseCache::updateBlockDataForL2_mem(CacheBlk *blk, const PacketPtr cpkt, bool ha
             data_update.oldData = std::vector<uint64_t>(blk->data, blk->data + (blkSize / sizeof(uint64_t)));
         }
     }
-
+    for(int i = 0; i < 16; i++){
+        allZero32bit[i] = 0;
+        lowZero32bit[i] = 0;
+        highZero32bit[i] = 0;
+        allOne32bit[i] = 0;
+        lowOne32bit[i] = 0;
+        highOne32bit[i] = 0;
+        nonNarrow32bit[i] = 0;
+    }
+    for(int i = 0; i < 8; i++){
+        narrowWidth[i] = 0;
+        allZero64bit[i] = 0;
+        allOne64bit[i] = 0;
+        highOne64bit[i] = 0;
+        lowOne64bit[i] = 0;
+        highZero64bit[i] = 0;
+        lowZero64bit[i] = 0;
+        nonNarrow64bit[i] = 0;
+    }
     //std::cout << data_update.oldData << std::endl;
     //tracePacket("OldData_mem", blk->data, blkSize);
     //std::cout << "OldData_mem" << std::endl;
@@ -1723,6 +1941,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
 
                         //end
                         uint8_t *data = dead_evict_blks[0]->data;
+                        int bit1_counter = 0;
                         for (int i = 0; i < 64; i++) {
                             std::string s;
                             s = std::bitset<8>(data[i] & 0xff).to_string();
@@ -1756,6 +1975,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                             //counter word
 
                             //32 bit
+
                             if(count(s.begin(), s.end(), '0') == 8){
                                 value_32_zero[value_32_idx] = 1;
                                 value_64_zero[value_64_idx] = 1;
@@ -1810,7 +2030,11 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                             }
 
                             //64 condition
+                            bit1_counter += count(s.begin(), s.end(), '0');
                             if(value_64_idx == 7){
+                                //if(bit1_counter >= 32){
+                                //
+                                //}
                                 // zero value
                                 int change = 0;
                                 if(value_64_zero[0] && value_64_zero[1] && value_64_zero[2] && value_64_zero[3]
@@ -2957,42 +3181,81 @@ BaseCache::CacheStats::CacheStats(BaseCache &c)
            "number of Non narrow width value in Cache block"),
 
     //yongjun : counter word
-    //32bit
-    ADD_STAT(allZero32bit_preset, statistics::units::Count::get(),
-           "number of highOrder_8bit in Cache block"),
-    ADD_STAT(allOne32bit_preset, statistics::units::Count::get(),
-           "number of lowOrder_8bit in Cache block"),
 
-    ADD_STAT(highOne32bit_preset, statistics::units::Count::get(),
-           "number of highOrder_16bit in Cache block"),
-    ADD_STAT(lowOne32bit_preset, statistics::units::Count::get(),
-           "number of lowOrder_16bit in Cache block"),
+        //32bit
+      ADD_STAT(allZero32bit, statistics::units::Count::get(),
+               "number of highOrder_8bit in Cache block"),
+      ADD_STAT(allOne32bit, statistics::units::Count::get(),
+               "number of lowOrder_8bit in Cache block"),
 
-    ADD_STAT(highZero32bit_preset, statistics::units::Count::get(),
-           "number of highOrder_32bit in Cache block"),
-    ADD_STAT(lowZero32bit_preset, statistics::units::Count::get(),
-           "number of lowOrder_32bit in Cache block"),
+      ADD_STAT(highOne32bit, statistics::units::Count::get(),
+               "number of highOrder_16bit in Cache block"),
+      ADD_STAT(lowOne32bit, statistics::units::Count::get(),
+               "number of lowOrder_16bit in Cache block"),
 
-    ADD_STAT(nonNarrow32bit_preset, statistics::units::Count::get(),
-           "number of lowOrder_32bit in Cache block"),
-    // 64bit
-    ADD_STAT(allZero64bit_preset, statistics::units::Count::get(),
-           "number of highOrder_8bit in Cache block"),
-    ADD_STAT(allOne64bit_preset, statistics::units::Count::get(),
-           "number of lowOrder_8bit in Cache block"),
+      ADD_STAT(highZero32bit, statistics::units::Count::get(),
+               "number of highOrder_32bit in Cache block"),
+      ADD_STAT(lowZero32bit, statistics::units::Count::get(),
+               "number of lowOrder_32bit in Cache block"),
 
-    ADD_STAT(highOne64bit_preset, statistics::units::Count::get(),
-           "number of highOrder_16bit in Cache block"),
-    ADD_STAT(lowOne64bit_preset, statistics::units::Count::get(),
-           "number of lowOrder_16bit in Cache block"),
+      ADD_STAT(nonNarrow32bit, statistics::units::Count::get(),
+               "number of lowOrder_32bit in Cache block"),
+        // 64bit
+      ADD_STAT(allZero64bit, statistics::units::Count::get(),
+               "number of highOrder_8bit in Cache block"),
+      ADD_STAT(allOne64bit, statistics::units::Count::get(),
+               "number of lowOrder_8bit in Cache block"),
 
-    ADD_STAT(highZero64bit_preset, statistics::units::Count::get(),
-           "number of highOrder_32bit in Cache block"),
-    ADD_STAT(lowZero64bit_preset, statistics::units::Count::get(),
-           "number of lowOrder_32bit in Cache block"),
+      ADD_STAT(highOne64bit, statistics::units::Count::get(),
+               "number of highOrder_16bit in Cache block"),
+      ADD_STAT(lowOne64bit, statistics::units::Count::get(),
+               "number of lowOrder_16bit in Cache block"),
 
-    ADD_STAT(nonNarrow64bit_preset, statistics::units::Count::get(),
-           "number of lowOrder_32bit in Cache block"),
+      ADD_STAT(highZero64bit, statistics::units::Count::get(),
+               "number of highOrder_32bit in Cache block"),
+      ADD_STAT(lowZero64bit, statistics::units::Count::get(),
+               "number of lowOrder_32bit in Cache block"),
+
+      ADD_STAT(nonNarrow64bit, statistics::units::Count::get(),
+               "number of lowOrder_32bit in Cache block"),
+        //end counter word
+
+        //32bit
+      ADD_STAT(allZero32bit_preset, statistics::units::Count::get(),
+               "number of highOrder_8bit in Cache block"),
+      ADD_STAT(allOne32bit_preset, statistics::units::Count::get(),
+               "number of lowOrder_8bit in Cache block"),
+
+      ADD_STAT(highOne32bit_preset, statistics::units::Count::get(),
+               "number of highOrder_16bit in Cache block"),
+      ADD_STAT(lowOne32bit_preset, statistics::units::Count::get(),
+               "number of lowOrder_16bit in Cache block"),
+
+      ADD_STAT(highZero32bit_preset, statistics::units::Count::get(),
+               "number of highOrder_32bit in Cache block"),
+      ADD_STAT(lowZero32bit_preset, statistics::units::Count::get(),
+               "number of lowOrder_32bit in Cache block"),
+
+      ADD_STAT(nonNarrow32bit_preset, statistics::units::Count::get(),
+               "number of lowOrder_32bit in Cache block"),
+        // 64bit
+      ADD_STAT(allZero64bit_preset, statistics::units::Count::get(),
+               "number of highOrder_8bit in Cache block"),
+      ADD_STAT(allOne64bit_preset, statistics::units::Count::get(),
+               "number of lowOrder_8bit in Cache block"),
+
+      ADD_STAT(highOne64bit_preset, statistics::units::Count::get(),
+               "number of highOrder_16bit in Cache block"),
+      ADD_STAT(lowOne64bit_preset, statistics::units::Count::get(),
+               "number of lowOrder_16bit in Cache block"),
+
+      ADD_STAT(highZero64bit_preset, statistics::units::Count::get(),
+               "number of highOrder_32bit in Cache block"),
+      ADD_STAT(lowZero64bit_preset, statistics::units::Count::get(),
+               "number of lowOrder_32bit in Cache block"),
+
+      ADD_STAT(nonNarrow64bit_preset, statistics::units::Count::get(),
+               "number of lowOrder_32bit in Cache block"),
     //end counter word
 
     ADD_STAT(DeadblockCount, statistics::units::Count::get(),

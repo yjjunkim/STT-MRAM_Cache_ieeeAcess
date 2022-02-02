@@ -115,6 +115,33 @@ class BaseCache : public ClockedObject
 
     char old_blk[512];
     char new_blk[512];
+
+
+    int narrowWidth[8];
+
+    int allZero32bit[16];
+    int lowZero32bit[16];
+    int highZero32bit[16];
+
+    int allOne32bit[16];
+    int lowOne32bit[16];
+    int highOne32bit[16];
+
+    int nonNarrow32bit[16];
+
+    //yongjun : 64bit
+    int allZero64bit[8];
+    int lowZero64bit[8];
+    int highZero64bit[8];
+
+    int allOne64bit[8];
+    int lowOne64bit[8];
+    int highOne64bit[8];
+
+    int nonNarrow64bit[8];
+
+
+
     //Adding Part End
     /**
      * Reasons for caches to be blocked.
