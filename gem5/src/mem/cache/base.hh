@@ -1140,7 +1140,7 @@ class BaseCache : public ClockedObject
         statistics::Scalar zeroToZero;
 
         statistics::Scalar zeroToZero_preset;
-        statistics::Scalar zeroToOne_preset;
+        statistics::Scalar oneToZero_preset;
         statistics::Scalar narrowWidth_preset;
         statistics::Scalar NonNarrowWidth_preset;
 
@@ -1192,6 +1192,10 @@ class BaseCache : public ClockedObject
         statistics::Scalar lowZero64bit_preset;
 
         statistics::Scalar nonNarrow64bit_preset;
+
+        statistics::Scalar more32in64;
+        statistics::Scalar less32in64;
+
 
 
 

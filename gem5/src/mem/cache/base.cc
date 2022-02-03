@@ -945,10 +945,16 @@ BaseCache::print_blk(const void* d, int len, int is_old,int is_mem)
                 value_32_zero[value_32_idx] = 1;
                 value_64_zero[value_64_idx] = 1;
 
+                value_32_one[value_32_idx] = 0;
+                value_64_one[value_64_idx] = 0;
+
             }
             else if(count(s.begin(), s.end(), '1') == 8){
                 value_32_one[value_32_idx] = 1;
                 value_64_one[value_64_idx] = 1;
+
+                value_32_zero[value_32_idx] = 0;
+                value_64_zero[value_64_idx] = 0;
             }
             else{
                 value_32_zero[value_32_idx] = 0;
@@ -1945,11 +1951,11 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                         for (int i = 0; i < 64; i++) {
                             std::string s;
                             s = std::bitset<8>(data[i] & 0xff).to_string();
-                            for (int j = 0; j < 8; j++) {
-                                if (s[j] == '0') stats.zeroToZero_preset++;
-                                else if (s[j] == '1') stats.zeroToOne_preset++;
-                            }
-                            data[i] = tmp;
+                            //for (int j = 0; j < 8; j++) {
+                            //    if (s[j] == '0') stats.zeroToZero_preset++;
+                            //    else if (s[j] == '1') stats.oneToZero_preset++;
+                            //}
+                            //data[i] = tmp;
                             if(narrow_set >= 4){
                                 if(count(s.begin(), s.end(), '0') == 8){
                                     flag[narrow_set-4] = 1;
@@ -1980,10 +1986,16 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                                 value_32_zero[value_32_idx] = 1;
                                 value_64_zero[value_64_idx] = 1;
 
+                                value_32_one[value_32_idx] = 0;
+                                value_64_one[value_64_idx] = 0;
+
                             }
                             else if(count(s.begin(), s.end(), '1') == 8){
                                 value_32_one[value_32_idx] = 1;
                                 value_64_one[value_64_idx] = 1;
+
+                                value_32_zero[value_32_idx] = 0;
+                                value_64_zero[value_64_idx] = 0;
                             }
                             else{
                                 value_32_zero[value_32_idx] = 0;
@@ -2030,11 +2042,26 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                             }
 
                             //64 condition
-                            bit1_counter += count(s.begin(), s.end(), '0');
+                            bit1_counter += count(s.begin(), s.end(), '1');
                             if(value_64_idx == 7){
-                                //if(bit1_counter >= 32){
-                                //
-                                //}
+                                if(bit1_counter >= 48){
+                                    stats.more32in64++;
+                                    //for(int t = i-7; t <= i; t++){
+                                    //    data[t] = tmp;
+                                    //}
+                                }
+                                else{
+                                    for(int t = i-7; t <= i; t++) {
+                                        s = std::bitset<8>(data[t] & 0xff).to_string();
+                                        for (int y = 0; y < 8; y++) {
+                                            if (s[y] == '0') stats.zeroToZero_preset++;
+                                            else if (s[y] == '1') stats.oneToZero_preset++;
+                                        }
+                                        data[t] = tmp;
+                                    }
+                                    stats.less32in64++;
+                                }
+                                bit1_counter = 0;
                                 // zero value
                                 int change = 0;
                                 if(value_64_zero[0] && value_64_zero[1] && value_64_zero[2] && value_64_zero[3]
@@ -2474,15 +2501,16 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
             stats.DeadblockCount++;
             uint8_t tmp = 0;
             //uint8_t tmp = 255;
+            int bit1_counter = 0;
             uint8_t *data = evict_blks[1]->data;
             for (int i = 0; i < 64; i++) {
                 std::string s;
                 s = std::bitset<8>(data[i] & 0xff).to_string();
-                for (int j = 0; j < 8; j++) {
-                    if (s[j] == '0') stats.zeroToZero_preset++;
-                    else if (s[j] == '1') stats.zeroToOne_preset++;
-                }
-                data[i] = tmp;
+                //for (int j = 0; j < 8; j++) {
+                //    if (s[j] == '0') stats.zeroToZero_preset++;
+                //    else if (s[j] == '1') stats.oneToZero_preset++;
+                //}
+                //data[i] = tmp;
                 if(narrow_set >= 4){
                     if(count(s.begin(), s.end(), '0') == 8){
                         flag[narrow_set-4] = 1;
@@ -2512,10 +2540,16 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
                     value_32_zero[value_32_idx] = 1;
                     value_64_zero[value_64_idx] = 1;
 
+                    value_32_one[value_32_idx] = 0;
+                    value_64_one[value_64_idx] = 0;
+
                 }
                 else if(count(s.begin(), s.end(), '1') == 8){
                     value_32_one[value_32_idx] = 1;
                     value_64_one[value_64_idx] = 1;
+
+                    value_32_zero[value_32_idx] = 0;
+                    value_64_zero[value_64_idx] = 0;
                 }
                 else{
                     value_32_zero[value_32_idx] = 0;
@@ -2562,7 +2596,25 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
                 }
 
                 //64 condition
+                bit1_counter += count(s.begin(), s.end(), '1');
                 if(value_64_idx == 7){
+                    if(bit1_counter >= 48){
+                        stats.more32in64++;
+                        //for(int t = i-7; t <= i; t++){
+                        //    data[t] = tmp;
+                        //}
+                    }
+                    else{
+                        for(int t = i-7; t <= i; t++) {
+                            s = std::bitset<8>(data[t] & 0xff).to_string();
+                            for (int y = 0; y < 8; y++) {
+                                if (s[y] == '0') stats.zeroToZero_preset++;
+                                else if (s[y] == '1') stats.oneToZero_preset++;
+                            }
+                            data[t] = tmp;
+                        }
+                        stats.less32in64++;
+                    }
                     // zero value
                     int change = 0;
                     if(value_64_zero[0] && value_64_zero[1] && value_64_zero[2] && value_64_zero[3]
@@ -3173,7 +3225,7 @@ BaseCache::CacheStats::CacheStats(BaseCache &c)
 
     ADD_STAT(zeroToZero_preset, statistics::units::Count::get(),
             "number of zero to zero (preset) in Cache block"),
-    ADD_STAT(zeroToOne_preset, statistics::units::Count::get(),
+    ADD_STAT(oneToZero_preset, statistics::units::Count::get(),
             "number of zero to one (preset) in Cache block"),
     ADD_STAT(narrowWidth_preset, statistics::units::Count::get(),
            "number of narrow width value in Cache block"),
@@ -3255,6 +3307,11 @@ BaseCache::CacheStats::CacheStats(BaseCache &c)
                "number of lowOrder_32bit in Cache block"),
 
       ADD_STAT(nonNarrow64bit_preset, statistics::units::Count::get(),
+               "number of lowOrder_32bit in Cache block"),
+
+      ADD_STAT(more32in64, statistics::units::Count::get(),
+               "number of lowOrder_32bit in Cache block"),
+      ADD_STAT(less32in64, statistics::units::Count::get(),
                "number of lowOrder_32bit in Cache block"),
     //end counter word
 
