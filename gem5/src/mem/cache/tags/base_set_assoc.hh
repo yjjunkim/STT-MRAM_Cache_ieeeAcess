@@ -279,9 +279,9 @@ class BaseSetAssoc : public BaseTags
                 CacheBlk* valid_test = static_cast<CacheBlk *>(candidate);
                 bool valid_bit = valid_test->isValid();
                 if(!valid_bit){ // if has invalid entry
-                    //if(valid_test != victim) {
-                    is_invalid = 1;
-                    //}
+                    if(valid_test != victim) {
+                        is_invalid = 1;
+                    }
                 }
             }
             int setIdx = indexingPolicy->getSetIdx(addr);

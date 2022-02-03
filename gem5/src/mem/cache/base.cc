@@ -1072,10 +1072,16 @@ BaseCache::print_blk(const void* d, int len, int is_old,int is_mem)
                 value_32_zero[value_32_idx] = 1;
                 value_64_zero[value_64_idx] = 1;
 
+                value_32_one[value_32_idx] = 0;
+                value_64_one[value_64_idx] = 0;
+
             }
             else if(count(s.begin(), s.end(), '1') == 8){
                 value_32_one[value_32_idx] = 1;
                 value_64_one[value_64_idx] = 1;
+
+                value_32_zero[value_32_idx] = 0;
+                value_64_zero[value_64_idx] = 0;
             }
             else{
                 value_32_zero[value_32_idx] = 0;
@@ -1083,6 +1089,8 @@ BaseCache::print_blk(const void* d, int len, int is_old,int is_mem)
                 value_32_one[value_32_idx] = 0;
                 value_64_one[value_64_idx] = 0;
             }
+
+
             //32 condition
             if(value_32_idx == 3){
                 // zero value
@@ -1925,10 +1933,10 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                 tags->writeHitL2_PROI(addr_test, dead_evict_blks, 0);
 
                 if(dead_evict_blks.size() == 1) {
-                    /*if((dead_evict_blks[0]==blk)==true){
+                    if((dead_evict_blks[0]==blk)==true){
                         dead_evict_blks[0] = NULL;
                         tags->writeHitL2_PROI(addr_test, dead_evict_blks, 1);
-                    }*/
+                    }
                     if((dead_evict_blks[0]==blk)==false) {
                         stats.DeadblockCount++;
                         handleEvictions(dead_evict_blks, writebacks);
@@ -2044,7 +2052,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                             //64 condition
                             bit1_counter += count(s.begin(), s.end(), '1');
                             if(value_64_idx == 7){
-                                if(bit1_counter >= 48){
+                                if(bit1_counter >= 32){
                                     stats.more32in64++;
                                     //for(int t = i-7; t <= i; t++){
                                     //    data[t] = tmp;
@@ -2598,7 +2606,7 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
                 //64 condition
                 bit1_counter += count(s.begin(), s.end(), '1');
                 if(value_64_idx == 7){
-                    if(bit1_counter >= 48){
+                    if(bit1_counter >= 32){
                         stats.more32in64++;
                         //for(int t = i-7; t <= i; t++){
                         //    data[t] = tmp;
@@ -2615,6 +2623,7 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
                         }
                         stats.less32in64++;
                     }
+                    bit1_counter = 0;
                     // zero value
                     int change = 0;
                     if(value_64_zero[0] && value_64_zero[1] && value_64_zero[2] && value_64_zero[3]
