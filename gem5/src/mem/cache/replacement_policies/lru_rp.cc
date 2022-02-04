@@ -123,16 +123,21 @@ LRU::getVictim(const ReplacementCandidates& candidates, int flag) const {
             victim_dead = victim_prev;
         }
     }
-    /*
-    std::cout << "victim lastTouch : "
-              << std::static_pointer_cast<LRUReplData>(victim->replacementData)->lastTouchTick << "\n";
-    std::cout << "dead block lastTouch : "
-              << std::static_pointer_cast<LRUReplData>(victim->replacementData)->lastTouchTick << "\n";
-    std::cout<<"=== end === " <<'\n';
-     */
-
-    //if (params_name == "system.l2.replacement_policy") std::cout << "candidate cnt : " << i << "\n";
-    return victim_dead;
+    //yongjun : LRU SECOND
+    ReplaceableEntry *victim_dead2 = candidates[1];
+    for (const auto &candidate: candidates) {
+        if(candidate != victim) {
+            if (std::static_pointer_cast<LRUReplData>(candidate->replacementData)->lastTouchTick <
+                std::static_pointer_cast<LRUReplData>(victim_dead2->replacementData)->lastTouchTick) {
+                // yongjun : set flag and save prev_victim
+                victim_dead2 = candidate;
+            }
+        }
+        else{
+            int chk = 0;
+        }
+    }
+    return victim_dead2;
 }
 
 /*
